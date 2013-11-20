@@ -31,17 +31,15 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <sys/personality.h>
 
-#ifdef HAVE_SELINUX
 #include <selinux/selinux.h>
 #include <selinux/label.h>
 #include <selinux/android.h>
-#endif
 
 #include <libgen.h>
 
 #include <cutils/list.h>
+#include <cutils/android_reboot.h>
 #include <cutils/sockets.h>
 #include <cutils/iosched_policy.h>
 #include <private/android_filesystem_config.h>
@@ -61,10 +59,8 @@
 #include "ueventd.h"
 #include "watchdogd.h"
 
-#ifdef HAVE_SELINUX
 struct selabel_handle *sehandle;
 struct selabel_handle *sehandle_prop;
-#endif
 
 static int property_triggers_enabled = 0;
 
@@ -77,10 +73,6 @@ static char bootmode[32];
 static char hardware[32];
 static unsigned revision = 0;
 static char qemu[32];
-
-#ifdef HAVE_SELINUX
-static int selinux_enabled = 1;
-#endif
 
 static struct action *cur_action = NULL;
 static struct command *cur_command = NULL;
@@ -97,7 +89,7 @@ void notify_service_state(const char *name, const char *state)
 }
 
 static int have_console;
-static char *console_name = "/dev/console";
+static char console_name[PROP_VALUE_MAX] = "/dev/console";
 static time_t process_needs_restart;
 
 static const char *ENV[32];
@@ -164,15 +156,14 @@ void service_start(struct service *svc, const char *dynamic_args)
     pid_t pid;
     int needs_console;
     int n;
-#ifdef HAVE_SELINUX
     char *scon = NULL;
     int rc;
-#endif
+
         /* starting a service removes it from the disabled or reset
          * state and immediately takes it out of the restarting
          * state if it was in there
          */
-    svc->flags &= (~(SVC_DISABLED|SVC_RESTARTING|SVC_RESET));
+    svc->flags &= (~(SVC_DISABLED|SVC_RESTARTING|SVC_RESET|SVC_RESTART));
     svc->time_started = 0;
 
         /* running processes require no additional work -- if
@@ -204,33 +195,39 @@ void service_start(struct service *svc, const char *dynamic_args)
         return;
     }
 
-#ifdef HAVE_SELINUX
     if (is_selinux_enabled() > 0) {
-        char *mycon = NULL, *fcon = NULL;
+        if (svc->seclabel) {
+            scon = strdup(svc->seclabel);
+            if (!scon) {
+                ERROR("Out of memory while starting '%s'\n", svc->name);
+                return;
+            }
+        } else {
+            char *mycon = NULL, *fcon = NULL;
 
-        INFO("computing context for service '%s'\n", svc->args[0]);
-        rc = getcon(&mycon);
-        if (rc < 0) {
-            ERROR("could not get context while starting '%s'\n", svc->name);
-            return;
-        }
+            INFO("computing context for service '%s'\n", svc->args[0]);
+            rc = getcon(&mycon);
+            if (rc < 0) {
+                ERROR("could not get context while starting '%s'\n", svc->name);
+                return;
+            }
 
-        rc = getfilecon(svc->args[0], &fcon);
-        if (rc < 0) {
-            ERROR("could not get context while starting '%s'\n", svc->name);
+            rc = getfilecon(svc->args[0], &fcon);
+            if (rc < 0) {
+                ERROR("could not get context while starting '%s'\n", svc->name);
+                freecon(mycon);
+                return;
+            }
+
+            rc = security_compute_create(mycon, fcon, string_to_security_class("process"), &scon);
             freecon(mycon);
-            return;
-        }
-
-        rc = security_compute_create(mycon, fcon, string_to_security_class("process"), &scon);
-        freecon(mycon);
-        freecon(fcon);
-        if (rc < 0) {
-            ERROR("could not get context while starting '%s'\n", svc->name);
-            return;
+            freecon(fcon);
+            if (rc < 0) {
+                ERROR("could not get context while starting '%s'\n", svc->name);
+                return;
+            }
         }
     }
-#endif
 
     NOTICE("starting '%s'\n", svc->name);
 
@@ -243,21 +240,6 @@ void service_start(struct service *svc, const char *dynamic_args)
         int fd, sz;
 
         umask(077);
-#ifdef __arm__
-        /*
-         * b/7188322 - Temporarily revert to the compat memory layout
-         * to avoid breaking third party apps.
-         *
-         * THIS WILL GO AWAY IN A FUTURE ANDROID RELEASE.
-         *
-         * http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=commitdiff;h=7dbaa466
-         * changes the kernel mapping from bottom up to top-down.
-         * This breaks some programs which improperly embed
-         * an out of date copy of Android's linker.
-         */
-        int current = personality(0xffffFFFF);
-        personality(current | ADDR_COMPAT_LAYOUT);
-#endif
         if (properties_inited()) {
             get_property_workspace(&fd, &sz);
             sprintf(tmp, "%d,%d", dup(fd), sz);
@@ -267,26 +249,19 @@ void service_start(struct service *svc, const char *dynamic_args)
         for (ei = svc->envvars; ei; ei = ei->next)
             add_environment(ei->name, ei->value);
 
-#ifdef HAVE_SELINUX
-        setsockcreatecon(scon);
-#endif
-
         for (si = svc->sockets; si; si = si->next) {
             int socket_type = (
                     !strcmp(si->type, "stream") ? SOCK_STREAM :
                         (!strcmp(si->type, "dgram") ? SOCK_DGRAM : SOCK_SEQPACKET));
             int s = create_socket(si->name, socket_type,
-                                  si->perm, si->uid, si->gid);
+                                  si->perm, si->uid, si->gid, si->socketcon ?: scon);
             if (s >= 0) {
                 publish_socket(si->name, s);
             }
         }
 
-#ifdef HAVE_SELINUX
         freecon(scon);
         scon = NULL;
-        setsockcreatecon(NULL);
-#endif
 
         if (svc->ioprio_class != IoSchedClass_NONE) {
             if (android_set_ioprio(getpid(), svc->ioprio_class, svc->ioprio_pri)) {
@@ -332,15 +307,12 @@ void service_start(struct service *svc, const char *dynamic_args)
                 _exit(127);
             }
         }
-
-#ifdef HAVE_SELINUX
         if (svc->seclabel) {
             if (is_selinux_enabled() > 0 && setexeccon(svc->seclabel) < 0) {
                 ERROR("cannot setexeccon('%s'): %s\n", svc->seclabel, strerror(errno));
                 _exit(127);
             }
         }
-#endif
 
         if (!dynamic_args) {
             if (execve(svc->args[0], (char**) svc->args, (char**) ENV) < 0) {
@@ -367,9 +339,7 @@ void service_start(struct service *svc, const char *dynamic_args)
         _exit(127);
     }
 
-#ifdef HAVE_SELINUX
     freecon(scon);
-#endif
 
     if (pid < 0) {
         ERROR("failed to start '%s'\n", svc->name);
@@ -385,15 +355,14 @@ void service_start(struct service *svc, const char *dynamic_args)
         notify_service_state(svc->name, "running");
 }
 
-/* The how field should be either SVC_DISABLED or SVC_RESET */
+/* The how field should be either SVC_DISABLED, SVC_RESET, or SVC_RESTART */
 static void service_stop_or_reset(struct service *svc, int how)
 {
-        /* we are no longer running, nor should we
-         * attempt to restart
-         */
-    svc->flags &= (~(SVC_RUNNING|SVC_RESTARTING));
+    /* The service is still SVC_RUNNING until its process exits, but if it has
+     * already exited it shoudn't attempt a restart yet. */
+    svc->flags &= (~SVC_RESTARTING);
 
-    if ((how != SVC_DISABLED) && (how != SVC_RESET)) {
+    if ((how != SVC_DISABLED) && (how != SVC_RESET) && (how != SVC_RESTART)) {
         /* Hrm, an illegal flag.  Default to SVC_DISABLED */
         how = SVC_DISABLED;
     }
@@ -423,6 +392,17 @@ void service_reset(struct service *svc)
 void service_stop(struct service *svc)
 {
     service_stop_or_reset(svc, SVC_DISABLED);
+}
+
+void service_restart(struct service *svc)
+{
+    if (svc->flags & SVC_RUNNING) {
+        /* Stop, wait, then start the service. */
+        service_stop_or_reset(svc, SVC_RESTART);
+    } else if (!(svc->flags & SVC_RESTARTING)) {
+        /* Just start the service since it's not running. */
+        service_start(svc, NULL);
+    } /* else: Service is restarting anyways. */
 }
 
 void property_changed(const char *name, const char *value)
@@ -456,7 +436,7 @@ static void restart_processes()
 
 static void msg_start(const char *name)
 {
-    struct service *svc;
+    struct service *svc = NULL;
     char *tmp = NULL;
     char *args = NULL;
 
@@ -464,11 +444,13 @@ static void msg_start(const char *name)
         svc = service_find_by_name(name);
     else {
         tmp = strdup(name);
-        args = strchr(tmp, ':');
-        *args = '\0';
-        args++;
+        if (tmp) {
+            args = strchr(tmp, ':');
+            *args = '\0';
+            args++;
 
-        svc = service_find_by_name(tmp);
+            svc = service_find_by_name(tmp);
+        }
     }
 
     if (svc) {
@@ -491,6 +473,17 @@ static void msg_stop(const char *name)
     }
 }
 
+static void msg_restart(const char *name)
+{
+    struct service *svc = service_find_by_name(name);
+
+    if (svc) {
+        service_restart(svc);
+    } else {
+        ERROR("no such service '%s'\n", name);
+    }
+}
+
 void handle_control_message(const char *msg, const char *arg)
 {
     if (!strcmp(msg,"start")) {
@@ -498,8 +491,7 @@ void handle_control_message(const char *msg, const char *arg)
     } else if (!strcmp(msg,"stop")) {
         msg_stop(arg);
     } else if (!strcmp(msg,"restart")) {
-        msg_stop(arg);
-        msg_start(arg);
+        msg_restart(arg);
     } else {
         ERROR("unknown control msg '%s'\n", msg);
     }
@@ -573,11 +565,9 @@ static int keychord_init_action(int nargs, char **args)
 static int console_init_action(int nargs, char **args)
 {
     int fd;
-    char tmp[PROP_VALUE_MAX];
 
     if (console[0]) {
-        snprintf(tmp, sizeof(tmp), "/dev/%s", console);
-        console_name = strdup(tmp);
+        snprintf(console_name, sizeof(console_name), "/dev/%s", console);
     }
 
     fd = open(console_name, O_RDWR);
@@ -585,30 +575,28 @@ static int console_init_action(int nargs, char **args)
         have_console = 1;
     close(fd);
 
-   // if( load_565rle_image(INIT_IMAGE_FILE) ) {
-    if( load_argb8888_image(INIT_IMAGE_FILE) ) {
-        fd = open("/dev/tty0", O_WRONLY);
-        if (fd >= 0) {
-            const char *msg;
-                msg = "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"  // console is 40 cols x 30 lines
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "\n"
-            "             A N D R O I D ";
-            write(fd, msg, strlen(msg));
-            close(fd);
-        }
+    fd = open("/dev/tty0", O_WRONLY);
+    if (fd >= 0) {
+        const char *msg;
+            msg = "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"  // console is 40 cols x 30 lines
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "             A N D R O I D ";
+        write(fd, msg, strlen(msg));
+        close(fd);
     }
+
     return 0;
 }
 
@@ -620,12 +608,6 @@ static void import_kernel_nv(char *name, int for_emulator)
     if (value == 0) return;
     *value++ = 0;
     if (name_len == 0) return;
-
-#ifdef HAVE_SELINUX
-    if (!strcmp(name,"selinux")) {
-        selinux_enabled = atoi(value);
-    }
-#endif
 
     if (for_emulator) {
         /* in the emulator, export any kernel option with the
@@ -654,7 +636,7 @@ static void import_kernel_nv(char *name, int for_emulator)
 static void export_kernel_boot_props(void)
 {
     char tmp[PROP_VALUE_MAX];
-    const char *pval;
+    int ret;
     unsigned i;
     struct {
         const char *src_prop;
@@ -668,22 +650,26 @@ static void export_kernel_boot_props(void)
     };
 
     for (i = 0; i < ARRAY_SIZE(prop_map); i++) {
-        pval = property_get(prop_map[i].src_prop);
-        property_set(prop_map[i].dest_prop, pval ?: prop_map[i].def_val);
+        ret = property_get(prop_map[i].src_prop, tmp);
+        if (ret > 0)
+            property_set(prop_map[i].dest_prop, tmp);
+        else
+            property_set(prop_map[i].dest_prop, prop_map[i].def_val);
     }
 
-    pval = property_get("ro.boot.console");
-    if (pval)
-        strlcpy(console, pval, sizeof(console));
+    ret = property_get("ro.boot.console", tmp);
+    if (ret)
+        strlcpy(console, tmp, sizeof(console));
 
     /* save a copy for init's usage during boot */
-    strlcpy(bootmode, property_get("ro.bootmode"), sizeof(bootmode));
+    property_get("ro.bootmode", tmp);
+    strlcpy(bootmode, tmp, sizeof(bootmode));
 
     /* if this was given on kernel command line, override what we read
      * before (e.g. from /proc/cpuinfo), if anything */
-    pval = property_get("ro.boot.hardware");
-    if (pval)
-        strlcpy(hardware, pval, sizeof(hardware));
+    ret = property_get("ro.boot.hardware", tmp);
+    if (ret)
+        strlcpy(hardware, tmp, sizeof(hardware));
     property_set("ro.hardware", hardware);
 
     snprintf(tmp, PROP_VALUE_MAX, "%d", revision);
@@ -773,9 +759,8 @@ static int bootchart_init_action(int nargs, char **args)
 }
 #endif
 
-#ifdef HAVE_SELINUX
 static const struct selinux_opt seopts_prop[] = {
-        { SELABEL_OPT_PATH, "/data/system/property_contexts" },
+        { SELABEL_OPT_PATH, "/data/security/property_contexts" },
         { SELABEL_OPT_PATH, "/property_contexts" },
         { 0, NULL }
 };
@@ -804,9 +789,49 @@ void selinux_init_all_handles(void)
     sehandle_prop = selinux_android_prop_context_handle();
 }
 
+static bool selinux_is_disabled(void)
+{
+    char tmp[PROP_VALUE_MAX];
+
+    if (access("/sys/fs/selinux", F_OK) != 0) {
+        /* SELinux is not compiled into the kernel, or has been disabled
+         * via the kernel command line "selinux=0".
+         */
+        return true;
+    }
+
+    if ((property_get("ro.boot.selinux", tmp) != 0) && (strcmp(tmp, "disabled") == 0)) {
+        /* SELinux is compiled into the kernel, but we've been told to disable it. */
+        return true;
+    }
+
+    return false;
+}
+
+static bool selinux_is_enforcing(void)
+{
+    char tmp[PROP_VALUE_MAX];
+
+    if (property_get("ro.boot.selinux", tmp) == 0) {
+        /* Property is not set.  Assume enforcing */
+        return true;
+    }
+
+    if (strcmp(tmp, "permissive") == 0) {
+        /* SELinux is in the kernel, but we've been told to go into permissive mode */
+        return false;
+    }
+
+    if (strcmp(tmp, "enforcing") != 0) {
+        ERROR("SELinux: Unknown value of ro.boot.selinux. Got: \"%s\". Assuming enforcing.\n", tmp);
+    }
+
+    return true;
+}
+
 int selinux_reload_policy(void)
 {
-    if (!selinux_enabled) {
+    if (selinux_is_disabled()) {
         return -1;
     }
 
@@ -832,7 +857,24 @@ int audit_callback(void *data, security_class_t cls, char *buf, size_t len)
     return 0;
 }
 
-#endif
+static void selinux_initialize(void)
+{
+    if (selinux_is_disabled()) {
+        return;
+    }
+
+    INFO("loading selinux policy\n");
+    if (selinux_android_load_policy() < 0) {
+        ERROR("SELinux: Failed to load policy; rebooting into recovery mode\n");
+        android_reboot(ANDROID_RB_RESTART2, 0, "recovery");
+        while (1) { pause(); }  // never reached
+    }
+
+    selinux_init_all_handles();
+    bool is_enforcing = selinux_is_enforcing();
+    INFO("SELinux: security_setenforce(%d)\n", is_enforcing);
+    security_setenforce(is_enforcing);
+}
 
 int main(int argc, char **argv)
 {
@@ -887,7 +929,6 @@ int main(int argc, char **argv)
 
     process_kernel_cmdline();
 
-#ifdef HAVE_SELINUX
     union selinux_callback cb;
     cb.func_log = klog_write;
     selinux_set_callback(SELINUX_CB_LOG, cb);
@@ -895,24 +936,15 @@ int main(int argc, char **argv)
     cb.func_audit = audit_callback;
     selinux_set_callback(SELINUX_CB_AUDIT, cb);
 
-    INFO("loading selinux policy\n");
-    if (selinux_enabled) {
-        if (selinux_android_load_policy() < 0) {
-            selinux_enabled = 0;
-            INFO("SELinux: Disabled due to failed policy load\n");
-        } else {
-            selinux_init_all_handles();
-        }
-    } else {
-        INFO("SELinux:  Disabled by command line option\n");
-    }
+    selinux_initialize();
     /* These directories were necessarily created before initial policy load
      * and therefore need their security context restored to the proper value.
      * This must happen before /dev is populated by ueventd.
      */
     restorecon("/dev");
     restorecon("/dev/socket");
-#endif
+    restorecon("/dev/__properties__");
+    restorecon_recursive("/sys");
 
     is_charger = !strcmp(bootmode, "charger");
 
@@ -927,7 +959,7 @@ int main(int argc, char **argv)
 
     queue_builtin_action(wait_for_coldboot_done_action, "wait_for_coldboot_done");
     queue_builtin_action(keychord_init_action, "keychord_init");
-
+    queue_builtin_action(console_init_action, "console_init");
 
     /* execute all the boot actions to get us started */
     action_for_each_trigger("init", action_add_queue_tail);
@@ -935,7 +967,6 @@ int main(int argc, char **argv)
     /* skip mounting filesystems in charger mode */
     if (!is_charger) {
         action_for_each_trigger("early-fs", action_add_queue_tail);
-        queue_builtin_action(console_init_action, "console_init");
         action_for_each_trigger("fs", action_add_queue_tail);
         action_for_each_trigger("post-fs", action_add_queue_tail);
         action_for_each_trigger("post-fs-data", action_add_queue_tail);

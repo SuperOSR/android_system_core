@@ -36,7 +36,7 @@
 
 #define R(x) ((unsigned int)(x))
 
-static void dump_memory(log_t* log, pid_t tid, uintptr_t addr, bool at_fault) {
+static void dump_memory(log_t* log, pid_t tid, uintptr_t addr, int scope_flags) {
     char code_buffer[64];       /* actual 8+1+((8+1)*4) + 1 == 45 */
     char ascii_buffer[32];      /* actual 16 + 1 == 17 */
     uintptr_t p, end;
@@ -92,7 +92,7 @@ static void dump_memory(log_t* log, pid_t tid, uintptr_t addr, bool at_fault) {
             p += 4;
         }
         *asc_out = '\0';
-        _LOG(log, !at_fault, "    %s %s\n", code_buffer, ascii_buffer);
+        _LOG(log, scope_flags, "    %s %s\n", code_buffer, ascii_buffer);
     }
 }
 
@@ -100,14 +100,13 @@ static void dump_memory(log_t* log, pid_t tid, uintptr_t addr, bool at_fault) {
  * If configured to do so, dump memory around *all* registers
  * for the crashing thread.
  */
-void dump_memory_and_code(const ptrace_context_t* context __attribute((unused)),
-        log_t* log, pid_t tid, bool at_fault) {
+void dump_memory_and_code(log_t* log, pid_t tid, int scope_flags) {
     pt_regs_mips_t r;
     if(ptrace(PTRACE_GETREGS, tid, 0, &r)) {
         return;
     }
 
-    if (at_fault && DUMP_MEMORY_FOR_ALL_REGISTERS) {
+    if (IS_AT_FAULT(scope_flags) && DUMP_MEMORY_FOR_ALL_REGISTERS) {
         static const char REG_NAMES[] = "$0atv0v1a0a1a2a3t0t1t2t3t4t5t6t7s0s1s2s3s4s5s6s7t8t9k0k1gpsps8ra";
 
         for (int reg = 0; reg < 32; reg++) {
@@ -129,50 +128,47 @@ void dump_memory_and_code(const ptrace_context_t* context __attribute((unused)),
                 continue;
             }
 
-            _LOG(log, false, "\nmemory near %.2s:\n", &REG_NAMES[reg * 2]);
-            dump_memory(log, tid, addr, at_fault);
+            _LOG(log, scope_flags | SCOPE_SENSITIVE, "\nmemory near %.2s:\n", &REG_NAMES[reg * 2]);
+            dump_memory(log, tid, addr, scope_flags | SCOPE_SENSITIVE);
         }
     }
 
     unsigned int pc = R(r.cp0_epc);
     unsigned int ra = R(r.regs[31]);
 
-    _LOG(log, !at_fault, "\ncode around pc:\n");
-    dump_memory(log, tid, (uintptr_t)pc, at_fault);
+    _LOG(log, scope_flags, "\ncode around pc:\n");
+    dump_memory(log, tid, (uintptr_t)pc, scope_flags);
 
     if (pc != ra) {
-        _LOG(log, !at_fault, "\ncode around ra:\n");
-        dump_memory(log, tid, (uintptr_t)ra, at_fault);
+        _LOG(log, scope_flags, "\ncode around ra:\n");
+        dump_memory(log, tid, (uintptr_t)ra, scope_flags);
     }
 }
 
-void dump_registers(const ptrace_context_t* context __attribute((unused)),
-        log_t* log, pid_t tid, bool at_fault)
+void dump_registers(log_t* log, pid_t tid, int scope_flags)
 {
     pt_regs_mips_t r;
-    bool only_in_tombstone = !at_fault;
-
     if(ptrace(PTRACE_GETREGS, tid, 0, &r)) {
-        _LOG(log, only_in_tombstone, "cannot get registers: %s\n", strerror(errno));
+        _LOG(log, scope_flags, "cannot get registers: %s\n", strerror(errno));
         return;
     }
 
-    _LOG(log, only_in_tombstone, " zr %08x  at %08x  v0 %08x  v1 %08x\n",
+    _LOG(log, scope_flags, " zr %08x  at %08x  v0 %08x  v1 %08x\n",
      R(r.regs[0]), R(r.regs[1]), R(r.regs[2]), R(r.regs[3]));
-    _LOG(log, only_in_tombstone, " a0 %08x  a1 %08x  a2 %08x  a3 %08x\n",
+    _LOG(log, scope_flags, " a0 %08x  a1 %08x  a2 %08x  a3 %08x\n",
      R(r.regs[4]), R(r.regs[5]), R(r.regs[6]), R(r.regs[7]));
-    _LOG(log, only_in_tombstone, " t0 %08x  t1 %08x  t2 %08x  t3 %08x\n",
+    _LOG(log, scope_flags, " t0 %08x  t1 %08x  t2 %08x  t3 %08x\n",
      R(r.regs[8]), R(r.regs[9]), R(r.regs[10]), R(r.regs[11]));
-    _LOG(log, only_in_tombstone, " t4 %08x  t5 %08x  t6 %08x  t7 %08x\n",
+    _LOG(log, scope_flags, " t4 %08x  t5 %08x  t6 %08x  t7 %08x\n",
      R(r.regs[12]), R(r.regs[13]), R(r.regs[14]), R(r.regs[15]));
-    _LOG(log, only_in_tombstone, " s0 %08x  s1 %08x  s2 %08x  s3 %08x\n",
+    _LOG(log, scope_flags, " s0 %08x  s1 %08x  s2 %08x  s3 %08x\n",
      R(r.regs[16]), R(r.regs[17]), R(r.regs[18]), R(r.regs[19]));
-    _LOG(log, only_in_tombstone, " s4 %08x  s5 %08x  s6 %08x  s7 %08x\n",
+    _LOG(log, scope_flags, " s4 %08x  s5 %08x  s6 %08x  s7 %08x\n",
      R(r.regs[20]), R(r.regs[21]), R(r.regs[22]), R(r.regs[23]));
-    _LOG(log, only_in_tombstone, " t8 %08x  t9 %08x  k0 %08x  k1 %08x\n",
+    _LOG(log, scope_flags, " t8 %08x  t9 %08x  k0 %08x  k1 %08x\n",
      R(r.regs[24]), R(r.regs[25]), R(r.regs[26]), R(r.regs[27]));
-    _LOG(log, only_in_tombstone, " gp %08x  sp %08x  s8 %08x  ra %08x\n",
+    _LOG(log, scope_flags, " gp %08x  sp %08x  s8 %08x  ra %08x\n",
      R(r.regs[28]), R(r.regs[29]), R(r.regs[30]), R(r.regs[31]));
-    _LOG(log, only_in_tombstone, " hi %08x  lo %08x bva %08x epc %08x\n",
+    _LOG(log, scope_flags, " hi %08x  lo %08x bva %08x epc %08x\n",
      R(r.hi), R(r.lo), R(r.cp0_badvaddr), R(r.cp0_epc));
 }

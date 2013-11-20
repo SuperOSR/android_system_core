@@ -5,9 +5,7 @@
 #include <dirent.h>
 #include <errno.h>
 
-#ifdef HAVE_SELINUX
 #include <selinux/selinux.h>
-#endif
 
 #include <sys/stat.h>
 #include <unistd.h>
@@ -30,6 +28,7 @@
 #define LIST_LONG_NUMERIC   (1 << 5)
 #define LIST_CLASSIFY       (1 << 6)
 #define LIST_MACLABEL       (1 << 7)
+#define LIST_INODE          (1 << 8)
 
 // fwd
 static int listpath(const char *name, int flags);
@@ -129,22 +128,20 @@ static int show_total_size(const char *dirname, DIR *d, int flags)
     return 0;
 }
 
-static int listfile_size(const char *path, const char *filename, int flags)
+static int listfile_size(const char *path, const char *filename, struct stat *s,
+                         int flags)
 {
-    struct stat s;
-
-    if (lstat(path, &s) < 0) {
-        fprintf(stderr, "lstat '%s' failed: %s\n", path, strerror(errno));
+    if(!s || !path) {
         return -1;
     }
 
     /* blocks are 512 bytes, we want output to be KB */
     if ((flags & LIST_SIZE) != 0) {
-        printf("%lld ", s.st_blocks / 2);
+        printf("%lld ", s->st_blocks / 2);
     }
 
     if ((flags & LIST_CLASSIFY) != 0) {
-        char filetype = mode2kind(s.st_mode);
+        char filetype = mode2kind(s->st_mode);
         if (filetype != 'l') {
             printf("%c ", filetype);
         } else {
@@ -163,14 +160,17 @@ static int listfile_size(const char *path, const char *filename, int flags)
     return 0;
 }
 
-static int listfile_long(const char *path, int flags)
+static int listfile_long(const char *path, struct stat *s, int flags)
 {
-    struct stat s;
     char date[32];
     char mode[16];
     char user[16];
     char group[16];
     const char *name;
+
+    if(!s || !path) {
+        return -1;
+    }
 
     /* name is anything after the final '/', or the whole path if none*/
     name = strrchr(path, '/');
@@ -180,36 +180,32 @@ static int listfile_long(const char *path, int flags)
         name++;
     }
 
-    if(lstat(path, &s) < 0) {
-        return -1;
-    }
-
-    mode2str(s.st_mode, mode);
+    mode2str(s->st_mode, mode);
     if (flags & LIST_LONG_NUMERIC) {
-        sprintf(user, "%ld", s.st_uid);
-        sprintf(group, "%ld", s.st_gid);
+        sprintf(user, "%ld", s->st_uid);
+        sprintf(group, "%ld", s->st_gid);
     } else {
-        user2str(s.st_uid, user);
-        group2str(s.st_gid, group);
+        user2str(s->st_uid, user);
+        group2str(s->st_gid, group);
     }
 
-    strftime(date, 32, "%Y-%m-%d %H:%M", localtime((const time_t*)&s.st_mtime));
+    strftime(date, 32, "%Y-%m-%d %H:%M", localtime((const time_t*)&s->st_mtime));
     date[31] = 0;
 
 // 12345678901234567890123456789012345678901234567890123456789012345678901234567890
 // MMMMMMMM UUUUUUUU GGGGGGGGG XXXXXXXX YYYY-MM-DD HH:MM NAME (->LINK)
 
-    switch(s.st_mode & S_IFMT) {
+    switch(s->st_mode & S_IFMT) {
     case S_IFBLK:
     case S_IFCHR:
         printf("%s %-8s %-8s %3d, %3d %s %s\n",
                mode, user, group,
-               (int) MAJOR(s.st_rdev), (int) MINOR(s.st_rdev),
+               (int) MAJOR(s->st_rdev), (int) MINOR(s->st_rdev),
                date, name);
         break;
     case S_IFREG:
         printf("%s %-8s %-8s %8lld %s %s\n",
-               mode, user, group, s.st_size, date, name);
+               mode, user, group, s->st_size, date, name);
         break;
     case S_IFLNK: {
         char linkto[256];
@@ -239,14 +235,17 @@ static int listfile_long(const char *path, int flags)
     return 0;
 }
 
-static int listfile_maclabel(const char *path, int flags)
+static int listfile_maclabel(const char *path, struct stat *s, int flags)
 {
-    struct stat s;
     char mode[16];
     char user[16];
     char group[16];
     char *maclabel = NULL;
     const char *name;
+
+    if(!s || !path) {
+        return -1;
+    }
 
     /* name is anything after the final '/', or the whole path if none*/
     name = strrchr(path, '/');
@@ -256,32 +255,24 @@ static int listfile_maclabel(const char *path, int flags)
         name++;
     }
 
-    if(lstat(path, &s) < 0) {
-        return -1;
-    }
-
-#ifdef HAVE_SELINUX
     lgetfilecon(path, &maclabel);
-#else
-    maclabel = strdup("-");
-#endif
     if (!maclabel) {
         return -1;
     }
 
-    mode2str(s.st_mode, mode);
-    user2str(s.st_uid, user);
-    group2str(s.st_gid, group);
+    mode2str(s->st_mode, mode);
+    user2str(s->st_uid, user);
+    group2str(s->st_gid, group);
 
-    switch(s.st_mode & S_IFMT) {
+    switch(s->st_mode & S_IFMT) {
     case S_IFLNK: {
         char linkto[256];
-        int len;
+        ssize_t len;
 
         len = readlink(path, linkto, sizeof(linkto));
         if(len < 0) return -1;
 
-        if(len > sizeof(linkto)-1) {
+        if((size_t)len > sizeof(linkto)-1) {
             linkto[sizeof(linkto)-4] = '.';
             linkto[sizeof(linkto)-3] = '.';
             linkto[sizeof(linkto)-2] = '.';
@@ -307,7 +298,9 @@ static int listfile_maclabel(const char *path, int flags)
 
 static int listfile(const char *dirname, const char *filename, int flags)
 {
-    if ((flags & LIST_LONG | LIST_SIZE | LIST_CLASSIFY | LIST_MACLABEL) == 0) {
+    struct stat s;
+
+    if ((flags & (LIST_LONG | LIST_SIZE | LIST_CLASSIFY | LIST_MACLABEL | LIST_INODE)) == 0) {
         printf("%s\n", filename);
         return 0;
     }
@@ -322,12 +315,20 @@ static int listfile(const char *dirname, const char *filename, int flags)
         pathname = filename;
     }
 
+    if(lstat(pathname, &s) < 0) {
+        return -1;
+    }
+
+    if(flags & LIST_INODE) {
+        printf("%8llu ", s.st_ino);
+    }
+
     if ((flags & LIST_MACLABEL) != 0) {
-        return listfile_maclabel(pathname, flags);
+        return listfile_maclabel(pathname, &s, flags);
     } else if ((flags & LIST_LONG) != 0) {
-        return listfile_long(pathname, flags);
+        return listfile_long(pathname, &s, flags);
     } else /*((flags & LIST_SIZE) != 0)*/ {
-        return listfile_size(pathname, filename, flags);
+        return listfile_size(pathname, filename, &s, flags);
     }
 }
 
@@ -462,6 +463,7 @@ int ls_main(int argc, char **argv)
                     case 'Z': flags |= LIST_MACLABEL; break;
                     case 'a': flags |= LIST_ALL; break;
                     case 'F': flags |= LIST_CLASSIFY; break;
+                    case 'i': flags |= LIST_INODE; break;
                     default:
                         fprintf(stderr, "%s: Unknown option '-%c'. Aborting.\n", "ls", arg[0]);
                         exit(1);

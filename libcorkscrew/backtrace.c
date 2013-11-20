@@ -33,17 +33,23 @@
 #include <unwind.h>
 #include <cutils/log.h>
 #include <cutils/atomic.h>
-#include <elf.h>
 
-#if HAVE_DLADDR
 #define __USE_GNU // For dladdr(3) in glibc.
 #include <dlfcn.h>
-#endif
 
 #if defined(__BIONIC__)
 
 // Bionic implements and exports gettid but only implements tgkill.
 extern int tgkill(int tgid, int tid, int sig);
+
+#elif defined(__APPLE__)
+
+#include <sys/syscall.h>
+
+// Mac OS >= 10.6 has a system call equivalent to Linux's gettid().
+static pid_t gettid() {
+  return syscall(SYS_thread_selfid);
+}
 
 #else
 
@@ -99,7 +105,7 @@ ssize_t unwind_backtrace(backtrace_frame_t* backtrace, size_t ignore_depth, size
     state.returned_frames = 0;
     init_memory(&state.memory, milist);
 
-    _Unwind_Reason_Code rc =_Unwind_Backtrace(unwind_backtrace_callback, &state);
+    _Unwind_Reason_Code rc = _Unwind_Backtrace(unwind_backtrace_callback, &state);
 
     release_my_map_info_list(milist);
 
@@ -148,7 +154,9 @@ ssize_t unwind_backtrace_thread(pid_t tid, backtrace_frame_t* backtrace,
 
     ALOGV("Unwinding thread %d from thread %d.", tid, gettid());
 
-#ifdef CORKSCREW_HAVE_ARCH
+    // TODO: there's no tgkill(2) on Mac OS, so we'd either need the
+    // mach_port_t or the pthread_t rather than the tid.
+#if defined(CORKSCREW_HAVE_ARCH) && !defined(__APPLE__)
     struct sigaction act;
     struct sigaction oact;
     memset(&act, 0, sizeof(act));
@@ -256,7 +264,6 @@ void get_backtrace_symbols(const backtrace_frame_t* backtrace, size_t frames,
             if (mi->name[0]) {
                 symbol->map_name = strdup(mi->name);
             }
-#if HAVE_DLADDR
             Dl_info info;
             if (dladdr((const void*)frame->absolute_pc, &info) && info.dli_sname) {
                 symbol->relative_symbol_addr = (uintptr_t)info.dli_saddr
@@ -264,7 +271,6 @@ void get_backtrace_symbols(const backtrace_frame_t* backtrace, size_t frames,
                 symbol->symbol_name = strdup(info.dli_sname);
                 symbol->demangled_name = demangle_symbol_name(symbol->symbol_name);
             }
-#endif
         }
     }
     release_my_map_info_list(milist);
@@ -309,20 +315,20 @@ void format_backtrace_line(unsigned frameNumber, const backtrace_frame_t* frame 
         const backtrace_symbol_t* symbol, char* buffer, size_t bufferSize) {
     const char* mapName = symbol->map_name ? symbol->map_name : "<unknown>";
     const char* symbolName = symbol->demangled_name ? symbol->demangled_name : symbol->symbol_name;
-    size_t fieldWidth = (bufferSize - 80) / 2;
+    int fieldWidth = (bufferSize - 80) / 2;
     if (symbolName) {
         uint32_t pc_offset = symbol->relative_pc - symbol->relative_symbol_addr;
         if (pc_offset) {
-            snprintf(buffer, bufferSize, "#%02d  pc %08x  %.*s (%.*s+%u)",
-                    frameNumber, symbol->relative_pc, fieldWidth, mapName,
+            snprintf(buffer, bufferSize, "#%02u  pc %p  %.*s (%.*s+%u)",
+                    frameNumber, (void*) symbol->relative_pc, fieldWidth, mapName,
                     fieldWidth, symbolName, pc_offset);
         } else {
-            snprintf(buffer, bufferSize, "#%02d  pc %08x  %.*s (%.*s)",
-                    frameNumber, symbol->relative_pc, fieldWidth, mapName,
+            snprintf(buffer, bufferSize, "#%02u  pc %p  %.*s (%.*s)",
+                    frameNumber, (void*) symbol->relative_pc, fieldWidth, mapName,
                     fieldWidth, symbolName);
         }
     } else {
-        snprintf(buffer, bufferSize, "#%02d  pc %08x  %.*s",
-                frameNumber, symbol->relative_pc, fieldWidth, mapName);
+        snprintf(buffer, bufferSize, "#%02u  pc %p  %.*s",
+                frameNumber, (void*) symbol->relative_pc, fieldWidth, mapName);
     }
 }

@@ -42,7 +42,7 @@
 #endif
 #endif
 
-static void dump_memory(log_t* log, pid_t tid, uintptr_t addr, bool at_fault) {
+static void dump_memory(log_t* log, pid_t tid, uintptr_t addr, int scope_flags) {
     char code_buffer[64];       /* actual 8+1+((8+1)*4) + 1 == 45 */
     char ascii_buffer[32];      /* actual 16 + 1 == 17 */
     uintptr_t p, end;
@@ -102,7 +102,7 @@ static void dump_memory(log_t* log, pid_t tid, uintptr_t addr, bool at_fault) {
             p += 4;
         }
         *asc_out = '\0';
-        _LOG(log, !at_fault, "    %s %s\n", code_buffer, ascii_buffer);
+        _LOG(log, scope_flags, "    %s %s\n", code_buffer, ascii_buffer);
     }
 }
 
@@ -110,14 +110,13 @@ static void dump_memory(log_t* log, pid_t tid, uintptr_t addr, bool at_fault) {
  * If configured to do so, dump memory around *all* registers
  * for the crashing thread.
  */
-void dump_memory_and_code(const ptrace_context_t* context __attribute((unused)),
-        log_t* log, pid_t tid, bool at_fault) {
+void dump_memory_and_code(log_t* log, pid_t tid, int scope_flags) {
     struct pt_regs regs;
     if(ptrace(PTRACE_GETREGS, tid, 0, &regs)) {
         return;
     }
 
-    if (at_fault && DUMP_MEMORY_FOR_ALL_REGISTERS) {
+    if (IS_AT_FAULT(scope_flags) && DUMP_MEMORY_FOR_ALL_REGISTERS) {
         static const char REG_NAMES[] = "r0r1r2r3r4r5r6r7r8r9slfpipsp";
 
         for (int reg = 0; reg < 14; reg++) {
@@ -132,38 +131,36 @@ void dump_memory_and_code(const ptrace_context_t* context __attribute((unused)),
                 continue;
             }
 
-            _LOG(log, false, "\nmemory near %.2s:\n", &REG_NAMES[reg * 2]);
-            dump_memory(log, tid, addr, at_fault);
+            _LOG(log, scope_flags | SCOPE_SENSITIVE, "\nmemory near %.2s:\n", &REG_NAMES[reg * 2]);
+            dump_memory(log, tid, addr, scope_flags | SCOPE_SENSITIVE);
         }
     }
 
-    _LOG(log, !at_fault, "\ncode around pc:\n");
-    dump_memory(log, tid, (uintptr_t)regs.ARM_pc, at_fault);
+    /* explicitly allow upload of code dump logging */
+    _LOG(log, scope_flags, "\ncode around pc:\n");
+    dump_memory(log, tid, (uintptr_t)regs.ARM_pc, scope_flags);
 
     if (regs.ARM_pc != regs.ARM_lr) {
-        _LOG(log, !at_fault, "\ncode around lr:\n");
-        dump_memory(log, tid, (uintptr_t)regs.ARM_lr, at_fault);
+        _LOG(log, scope_flags, "\ncode around lr:\n");
+        dump_memory(log, tid, (uintptr_t)regs.ARM_lr, scope_flags);
     }
 }
 
-void dump_registers(const ptrace_context_t* context __attribute((unused)),
-        log_t* log, pid_t tid, bool at_fault)
+void dump_registers(log_t* log, pid_t tid, int scope_flags)
 {
     struct pt_regs r;
-    bool only_in_tombstone = !at_fault;
-
     if(ptrace(PTRACE_GETREGS, tid, 0, &r)) {
-        _LOG(log, only_in_tombstone, "cannot get registers: %s\n", strerror(errno));
+        _LOG(log, scope_flags, "cannot get registers: %s\n", strerror(errno));
         return;
     }
 
-    _LOG(log, only_in_tombstone, "    r0 %08x  r1 %08x  r2 %08x  r3 %08x\n",
+    _LOG(log, scope_flags, "    r0 %08x  r1 %08x  r2 %08x  r3 %08x\n",
             (uint32_t)r.ARM_r0, (uint32_t)r.ARM_r1, (uint32_t)r.ARM_r2, (uint32_t)r.ARM_r3);
-    _LOG(log, only_in_tombstone, "    r4 %08x  r5 %08x  r6 %08x  r7 %08x\n",
+    _LOG(log, scope_flags, "    r4 %08x  r5 %08x  r6 %08x  r7 %08x\n",
             (uint32_t)r.ARM_r4, (uint32_t)r.ARM_r5, (uint32_t)r.ARM_r6, (uint32_t)r.ARM_r7);
-    _LOG(log, only_in_tombstone, "    r8 %08x  r9 %08x  sl %08x  fp %08x\n",
+    _LOG(log, scope_flags, "    r8 %08x  r9 %08x  sl %08x  fp %08x\n",
             (uint32_t)r.ARM_r8, (uint32_t)r.ARM_r9, (uint32_t)r.ARM_r10, (uint32_t)r.ARM_fp);
-    _LOG(log, only_in_tombstone, "    ip %08x  sp %08x  lr %08x  pc %08x  cpsr %08x\n",
+    _LOG(log, scope_flags, "    ip %08x  sp %08x  lr %08x  pc %08x  cpsr %08x\n",
             (uint32_t)r.ARM_ip, (uint32_t)r.ARM_sp, (uint32_t)r.ARM_lr,
             (uint32_t)r.ARM_pc, (uint32_t)r.ARM_cpsr);
 
@@ -172,14 +169,14 @@ void dump_registers(const ptrace_context_t* context __attribute((unused)),
     int i;
 
     if(ptrace(PTRACE_GETVFPREGS, tid, 0, &vfp_regs)) {
-        _LOG(log, only_in_tombstone, "cannot get registers: %s\n", strerror(errno));
+        _LOG(log, scope_flags, "cannot get registers: %s\n", strerror(errno));
         return;
     }
 
     for (i = 0; i < NUM_VFP_REGS; i += 2) {
-        _LOG(log, only_in_tombstone, "    d%-2d %016llx  d%-2d %016llx\n",
+        _LOG(log, scope_flags, "    d%-2d %016llx  d%-2d %016llx\n",
                 i, vfp_regs.fpregs[i], i+1, vfp_regs.fpregs[i+1]);
     }
-    _LOG(log, only_in_tombstone, "    scr %08lx\n", vfp_regs.fpscr);
+    _LOG(log, scope_flags, "    scr %08lx\n", vfp_regs.fpscr);
 #endif
 }

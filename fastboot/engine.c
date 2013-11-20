@@ -29,13 +29,13 @@
 #include "fastboot.h"
 #include "make_ext4fs.h"
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -45,31 +45,7 @@
 #include <sys/mman.h>
 #endif
 
-extern struct fs_info info;
-
 #define ARRAY_SIZE(x)           (sizeof(x)/sizeof(x[0]))
-
-double now()
-{
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return (double)tv.tv_sec + (double)tv.tv_usec / 1000000;
-}
-
-char *mkmsg(const char *fmt, ...)
-{
-    char buf[256];
-    char *s;
-    va_list ap;
-
-    va_start(ap, fmt);
-    vsprintf(buf, fmt, ap);
-    va_end(ap);
-
-    s = strdup(buf);
-    if (s == 0) die("out of memory");
-    return s;
-}
 
 #define OP_DOWNLOAD   1
 #define OP_COMMAND    2
@@ -77,6 +53,7 @@ char *mkmsg(const char *fmt, ...)
 #define OP_NOTICE     4
 #define OP_FORMAT     5
 #define OP_DOWNLOAD_SPARSE 6
+#define OP_WAIT_FOR_DISCONNECT 7
 
 typedef struct Action Action;
 
@@ -302,10 +279,7 @@ void generate_ext4_image(struct image_data *image)
 #else
     fd = fileno(tmpfile());
 #endif
-    /* reset ext4fs info so we can be called multiple times */
-    reset_ext4fs_info();
-    info.len = image->partition_size;
-    make_ext4fs_internal(fd, NULL, NULL, NULL, 0, 1, 0, 0, 0, NULL);
+    make_ext4fs_sparse_fd(fd, image->partition_size, NULL, NULL);
 
     fstat(fd, &st);
     image->image_size = st.st_size;
@@ -591,6 +565,11 @@ void fb_queue_notice(const char *notice)
     a->data = (void*) notice;
 }
 
+void fb_queue_wait_for_disconnect(void)
+{
+    queue_action(OP_WAIT_FOR_DISCONNECT, "");
+}
+
 int fb_execute_queue(usb_handle *usb)
 {
     Action *a;
@@ -632,6 +611,8 @@ int fb_execute_queue(usb_handle *usb)
             status = fb_download_data_sparse(usb, a->data);
             status = a->func(a, status, status ? fb_get_error() : "");
             if (status) break;
+        } else if (a->op == OP_WAIT_FOR_DISCONNECT) {
+            usb_wait_for_disconnect(usb);
         } else {
             die("bogus action");
         }

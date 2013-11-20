@@ -27,12 +27,10 @@
 #include <sys/types.h>
 #include <sys/ptrace.h>
 
-#include <corkscrew/backtrace.h>
+#include <backtrace/backtrace.h>
 
-#include "tombstone.h"
+#include "backtrace.h"
 #include "utility.h"
-
-#define STACK_DEPTH 32
 
 static void dump_process_header(log_t* log, pid_t pid) {
     char path[PATH_MAX];
@@ -51,18 +49,18 @@ static void dump_process_header(log_t* log, pid_t pid) {
     localtime_r(&t, &tm);
     char timestr[64];
     strftime(timestr, sizeof(timestr), "%F %T", &tm);
-    _LOG(log, false, "\n\n----- pid %d at %s -----\n", pid, timestr);
+    _LOG(log, SCOPE_AT_FAULT, "\n\n----- pid %d at %s -----\n", pid, timestr);
 
     if (procname) {
-        _LOG(log, false, "Cmd line: %s\n", procname);
+        _LOG(log, SCOPE_AT_FAULT, "Cmd line: %s\n", procname);
     }
 }
 
 static void dump_process_footer(log_t* log, pid_t pid) {
-    _LOG(log, false, "\n----- end %d -----\n", pid);
+    _LOG(log, SCOPE_AT_FAULT, "\n----- end %d -----\n", pid);
 }
 
-static void dump_thread(log_t* log, pid_t tid, ptrace_context_t* context, bool attached,
+static void dump_thread(log_t* log, pid_t tid, bool attached,
         bool* detach_failed, int* total_sleep_time_usec) {
     char path[PATH_MAX];
     char threadnamebuf[1024];
@@ -81,29 +79,22 @@ static void dump_thread(log_t* log, pid_t tid, ptrace_context_t* context, bool a
         }
     }
 
-    _LOG(log, false, "\n\"%s\" sysTid=%d\n", threadname ? threadname : "<unknown>", tid);
+    _LOG(log, SCOPE_AT_FAULT, "\n\"%s\" sysTid=%d\n",
+            threadname ? threadname : "<unknown>", tid);
 
     if (!attached && ptrace(PTRACE_ATTACH, tid, 0, 0) < 0) {
-        _LOG(log, false, "Could not attach to thread: %s\n", strerror(errno));
+        _LOG(log, SCOPE_AT_FAULT, "Could not attach to thread: %s\n", strerror(errno));
         return;
     }
 
     wait_for_stop(tid, total_sleep_time_usec);
 
-    backtrace_frame_t backtrace[STACK_DEPTH];
-    ssize_t frames = unwind_backtrace_ptrace(tid, context, backtrace, 0, STACK_DEPTH);
-    if (frames <= 0) {
-        _LOG(log, false, "Could not obtain stack trace for thread.\n");
+    backtrace_context_t context;
+    if (!backtrace_create_context(&context, tid, -1, 0)) {
+        _LOG(log, SCOPE_AT_FAULT, "Could not create backtrace context.\n");
     } else {
-        backtrace_symbol_t backtrace_symbols[STACK_DEPTH];
-        get_backtrace_symbols_ptrace(context, backtrace, frames, backtrace_symbols);
-        for (size_t i = 0; i < (size_t)frames; i++) {
-            char line[MAX_BACKTRACE_LINE_LENGTH];
-            format_backtrace_line(i, &backtrace[i], &backtrace_symbols[i],
-                    line, MAX_BACKTRACE_LINE_LENGTH);
-            _LOG(log, false, "  %s\n", line);
-        }
-        free_backtrace_symbols(backtrace_symbols, frames);
+        dump_backtrace_to_log(&context, log, SCOPE_AT_FAULT, "  ");
+        backtrace_destroy_context(&context);
     }
 
     if (!attached && ptrace(PTRACE_DETACH, tid, 0, 0) != 0) {
@@ -112,23 +103,22 @@ static void dump_thread(log_t* log, pid_t tid, ptrace_context_t* context, bool a
     }
 }
 
-void dump_backtrace(int fd, pid_t pid, pid_t tid, bool* detach_failed,
+void dump_backtrace(int fd, int amfd, pid_t pid, pid_t tid, bool* detach_failed,
         int* total_sleep_time_usec) {
     log_t log;
     log.tfd = fd;
+    log.amfd = amfd;
     log.quiet = true;
 
-    ptrace_context_t* context = load_ptrace_context(tid);
     dump_process_header(&log, pid);
-    dump_thread(&log, tid, context, true, detach_failed, total_sleep_time_usec);
+    dump_thread(&log, tid, true, detach_failed, total_sleep_time_usec);
 
     char task_path[64];
     snprintf(task_path, sizeof(task_path), "/proc/%d/task", pid);
     DIR* d = opendir(task_path);
-    if (d) {
-        struct dirent debuf;
-        struct dirent *de;
-        while (!readdir_r(d, &debuf, &de) && de) {
+    if (d != NULL) {
+        struct dirent* de = NULL;
+        while ((de = readdir(d)) != NULL) {
             if (!strcmp(de->d_name, ".") || !strcmp(de->d_name, "..")) {
                 continue;
             }
@@ -139,11 +129,19 @@ void dump_backtrace(int fd, pid_t pid, pid_t tid, bool* detach_failed,
                 continue;
             }
 
-            dump_thread(&log, new_tid, context, false, detach_failed, total_sleep_time_usec);
+            dump_thread(&log, new_tid, false, detach_failed, total_sleep_time_usec);
         }
         closedir(d);
     }
 
     dump_process_footer(&log, pid);
-    free_ptrace_context(context);
+}
+
+void dump_backtrace_to_log(const backtrace_context_t* context, log_t* log,
+                           int scope_flags, const char* prefix) {
+    char buf[512];
+    for (size_t i = 0; i < context->backtrace->num_frames; i++) {
+        backtrace_format_frame_data(context, i, buf, sizeof(buf));
+        _LOG(log, scope_flags, "%s%s\n", prefix, buf);
+    }
 }
