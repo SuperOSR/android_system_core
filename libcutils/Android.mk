@@ -117,7 +117,8 @@ LOCAL_SRC_FILES := $(commonSources) \
         partition_utils.c \
         qtaguid.c \
         trace.c \
-        uevent.c
+        uevent.c \
+        misc_rw.c
 
 ifeq ($(TARGET_ARCH),arm)
     LOCAL_SRC_FILES += arch-arm/memset32.S
@@ -133,6 +134,13 @@ else  # !arm
         endif # !mips
     endif # !x86
 endif # !arm
+
+ifneq ($(SW_BOARD_RECOVERY_MISC_PARTITION),)
+  BOARD_MISC_PARTITION  :=$(SW_BOARD_RECOVERY_MISC_PARTITION)
+else
+  BOARD_MISC_PARTITION  :=\"nandf\"
+endif
+LOCAL_CFLAGS += -DBOARD_MISC_PARTITION=$(BOARD_MISC_PARTITION)
 
 LOCAL_C_INCLUDES := $(libcutils_c_includes) $(KERNEL_HEADERS)
 LOCAL_STATIC_LIBRARIES := liblog

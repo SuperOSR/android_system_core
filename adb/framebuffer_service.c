@@ -56,7 +56,7 @@ void framebuffer_service(int fd, void *cookie)
 {
     struct fbinfo fbinfo;
     unsigned int i, bsize;
-    char buf[640];
+    char buf[1024];
     int fd_screencap;
     int w, h, f;
     int fds[2];

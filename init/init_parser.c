@@ -101,6 +101,9 @@ int lookup_keyword(const char *s)
         if (!strcmp(s, "xec")) return K_exec;
         if (!strcmp(s, "xport")) return K_export;
         break;
+    case 'f':
+    	if (!strcmp(s,"ormat_userdata")) return K_format_userdata;
+    	break;
     case 'g':
         if (!strcmp(s, "roup")) return K_group;
         break;

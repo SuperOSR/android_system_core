@@ -100,6 +100,7 @@ static void remount_ro(void)
     return;
 }
 
+extern int write_misc(char *reason);
 
 int android_reboot(int cmd, int flags, char *arg)
 {
@@ -107,7 +108,7 @@ int android_reboot(int cmd, int flags, char *arg)
 
     if (!(flags & ANDROID_RB_FLAG_NO_SYNC))
         sync();
-
+    sleep(2);
     if (!(flags & ANDROID_RB_FLAG_NO_REMOUNT_RO))
         remount_ro();
 
@@ -121,8 +122,10 @@ int android_reboot(int cmd, int flags, char *arg)
             break;
 
         case ANDROID_RB_RESTART2:
-            ret = __reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
-                           LINUX_REBOOT_CMD_RESTART2, arg);
+            //ret = __reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
+            //               LINUX_REBOOT_CMD_RESTART2, arg);
+            write_misc(arg);
+			ret = reboot(RB_AUTOBOOT);
             break;
 
         default:
