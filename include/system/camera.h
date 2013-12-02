@@ -88,10 +88,13 @@ enum {
     // Notify on autofocus start and stop. This is useful in continuous
     // autofocus - FOCUS_MODE_CONTINUOUS_VIDEO and FOCUS_MODE_CONTINUOUS_PICTURE.
     CAMERA_MSG_FOCUS_MOVE = 0x0800,       // notifyCallback
+<<<<<<< HEAD
     CAMERA_MSG_CONTINUOUSSNAP= 0x1000,    //notifyCallback for continuous snap by fuqiang
     CAMERA_MSG_SNAP= 0x2000,    //notifyCallback of setting camera idle  for single snap by fuqiang
     CAMERA_MSG_SNAP_THUMB= 0x4000,    //notifyCallback of saving thumb for single snap by fuqiang
     CAMERA_MSG_SNAP_FD= 0x8000,    //notifyCallback of requesting fd for single and continuoussnap by fuqiang
+=======
+>>>>>>> aosp/master
     CAMERA_MSG_ALL_MSGS = 0xFFFF
 };
 
@@ -178,9 +181,12 @@ enum {
      * count is non-positive or too big to be realized.
      */
     CAMERA_CMD_SET_VIDEO_BUFFER_COUNT = 10,
+<<<<<<< HEAD
 
     CAMERA_CMD_SET_SCREEN_ID = 0xFF000000,
 	CAMERA_CMD_SET_CEDARX_RECORDER = 0xFF000001,
+=======
+>>>>>>> aosp/master
 };
 
 /** camera fatal errors */

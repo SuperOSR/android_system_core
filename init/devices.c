@@ -44,6 +44,10 @@
 #include <cutils/uevent.h>
 
 #include "devices.h"
+<<<<<<< HEAD
+=======
+#include "ueventd_parser.h"
+>>>>>>> aosp/master
 #include "util.h"
 #include "log.h"
 
@@ -530,8 +534,16 @@ static const char *parse_device_name(struct uevent *uevent, unsigned int len)
     name++;
 
     /* too-long names would overrun our buffer */
+<<<<<<< HEAD
     if(strlen(name) > len)
         return NULL;
+=======
+    if(strlen(name) > len) {
+        ERROR("DEVPATH=%s exceeds %u-character limit on filename; ignoring event\n",
+                name, len);
+        return NULL;
+    }
+>>>>>>> aosp/master
 
     return name;
 }
@@ -557,17 +569,54 @@ static void handle_block_device_event(struct uevent *uevent)
             uevent->major, uevent->minor, links);
 }
 
+<<<<<<< HEAD
+=======
+#define DEVPATH_LEN 96
+
+static bool assemble_devpath(char *devpath, const char *dirname,
+        const char *devname)
+{
+    int s = snprintf(devpath, DEVPATH_LEN, "%s/%s", dirname, devname);
+    if (s < 0) {
+        ERROR("failed to assemble device path (%s); ignoring event\n",
+                strerror(errno));
+        return false;
+    } else if (s >= DEVPATH_LEN) {
+        ERROR("%s/%s exceeds %u-character limit on path; ignoring event\n",
+                dirname, devname, DEVPATH_LEN);
+        return false;
+    }
+    return true;
+}
+
+static void mkdir_recursive_for_devpath(const char *devpath)
+{
+    char dir[DEVPATH_LEN];
+    char *slash;
+
+    strcpy(dir, devpath);
+    slash = strrchr(dir, '/');
+    *slash = '\0';
+    mkdir_recursive(dir, 0755);
+}
+
+>>>>>>> aosp/master
 static void handle_generic_device_event(struct uevent *uevent)
 {
     char *base;
     const char *name;
+<<<<<<< HEAD
     char devpath[96] = {0};
+=======
+    char devpath[DEVPATH_LEN] = {0};
+>>>>>>> aosp/master
     char **links = NULL;
 
     name = parse_device_name(uevent, 64);
     if (!name)
         return;
 
+<<<<<<< HEAD
     if (!strncmp(uevent->subsystem, "usb", 3)) {
          if (!strcmp(uevent->subsystem, "usb")) {
             if (uevent->device_name) {
@@ -588,6 +637,38 @@ static void handle_generic_device_event(struct uevent *uevent)
                     }
                     p++;
                 }
+=======
+    struct ueventd_subsystem *subsystem =
+            ueventd_subsystem_find_by_name(uevent->subsystem);
+
+    if (subsystem) {
+        const char *devname;
+
+        switch (subsystem->devname_src) {
+        case DEVNAME_UEVENT_DEVNAME:
+            devname = uevent->device_name;
+            break;
+
+        case DEVNAME_UEVENT_DEVPATH:
+            devname = name;
+            break;
+
+        default:
+            ERROR("%s subsystem's devpath option is not set; ignoring event\n",
+                    uevent->subsystem);
+            return;
+        }
+
+        if (!assemble_devpath(devpath, subsystem->dirname, devname))
+            return;
+        mkdir_recursive_for_devpath(devpath);
+    } else if (!strncmp(uevent->subsystem, "usb", 3)) {
+         if (!strcmp(uevent->subsystem, "usb")) {
+            if (uevent->device_name) {
+                if (!assemble_devpath(devpath, "/dev", uevent->device_name))
+                    return;
+                mkdir_recursive_for_devpath(devpath);
+>>>>>>> aosp/master
              }
              else {
                  /* This imitates the file system that would be created

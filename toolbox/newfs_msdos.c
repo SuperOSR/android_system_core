@@ -572,6 +572,7 @@ newfs_msdos_main(int argc, char *argv[])
     if (x1 + (u_int64_t)x * bpb.nft > bpb.bsec)
 	errx(1, "meta data exceeds file system size");
     x1 += x * bpb.nft;
+<<<<<<< HEAD
 	if ((fat == 32) && (bpb.bspf == 0)) {
     	if( bpb.bsec > 256*1024 ) {
     		u_int tmp_x = (u_int64_t)(bpb.bsec - x1) * bpb.bps * NPB /
@@ -590,6 +591,8 @@ newfs_msdos_main(int argc, char *argv[])
 		    printf("bpb.bsec = %d\n", bpb.bsec);
     	}        
     }
+=======
+>>>>>>> aosp/master
     x = (u_int64_t)(bpb.bsec - x1) * bpb.bps * NPB /
 	(bpb.spc * bpb.bps * NPB + fat / BPN * bpb.nft);
     x2 = howmany((RESFTE + MIN(x, maxcls(fat))) * (fat / BPN),

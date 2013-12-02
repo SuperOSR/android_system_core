@@ -131,6 +131,7 @@ static int autosuspend_wakeup_count_disable(void)
     return ret;
 }
 
+<<<<<<< HEAD
 static int autosuspend_wakeup_count_bootfast(void)
 {
 	ALOGV("not support\n");
@@ -141,6 +142,11 @@ struct autosuspend_ops autosuspend_wakeup_count_ops = {
         .enable = autosuspend_wakeup_count_enable,
         .disable = autosuspend_wakeup_count_disable,
 		.bootfast = autosuspend_wakeup_count_bootfast,
+=======
+struct autosuspend_ops autosuspend_wakeup_count_ops = {
+        .enable = autosuspend_wakeup_count_enable,
+        .disable = autosuspend_wakeup_count_disable,
+>>>>>>> aosp/master
 };
 
 struct autosuspend_ops *autosuspend_wakeup_count_init(void)

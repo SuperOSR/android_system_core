@@ -26,8 +26,13 @@
 #include <assert.h>
 #include <arpa/inet.h>
 
+<<<<<<< HEAD
 #include <cutils/logd.h>
 #include <cutils/logprint.h>
+=======
+#include <log/logd.h>
+#include <log/logprint.h>
+>>>>>>> aosp/master
 
 typedef struct FilterInfo_t {
     char *mTag;

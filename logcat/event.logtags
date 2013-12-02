@@ -90,10 +90,13 @@
 # Logged when the supplicant switches to a new state
 50023 wifi_supplicant_state_changed (supplicant_state|1|5)
 
+<<<<<<< HEAD
 # Do not change these names without updating tag in:
 #//device/dalvik/libcore/luni/src/main/native/org_apache_harmony_luni_platform_OSNetworkSystem.c
 51000 socket_stats (send|1|2),(recv|1|2),(ip|1|5),(port|1|5),(close|1|5)
 
+=======
+>>>>>>> aosp/master
 # Database operation samples.
 # db: the filename of the database
 # sql: the executed query (without query args)
@@ -110,6 +113,7 @@
 60003 view_use_drawing_cache (View drawn using bitmap cache|1|5)
 
 # graphics timestamp
+<<<<<<< HEAD
 60100 sf_app_dequeue_before (buffer|1),(identity|1),(time|2)
 60101 sf_app_dequeue_after (buffer|1),(identity|1),(time|2)
 60102 sf_app_lock_before (buffer|1),(identity|1),(time|2)
@@ -126,6 +130,9 @@
 60113 sf_fb_dequeue_after (buffer|1),(time|2)
 60114 sf_fb_lock_before (buffer|1),(time|2)
 60115 sf_fb_lock_after (buffer|1),(time|2)
+=======
+# 60100 - 60199 reserved for surfaceflinger
+>>>>>>> aosp/master
 
 # 0 for screen off, 1 for screen on, 2 for key-guard done
 70000 screen_toggled (screen_state|1|5)
@@ -151,7 +158,11 @@
 80310 bionic_event_resolver_wrong_query (uid|1)
 
 # libcore failure logging
+<<<<<<< HEAD
 90100 cert_pin_failure (certs|4)
+=======
+90100 exp_det_cert_pin_failure (certs|4)
+>>>>>>> aosp/master
 
 # NOTE - the range 1000000-2000000 is reserved for partners and others who
 # want to define their own log tags without conflicting with the core platform.

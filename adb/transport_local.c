@@ -21,6 +21,12 @@
 
 #include "sysdeps.h"
 #include <sys/types.h>
+<<<<<<< HEAD
+=======
+#if !ADB_HOST
+#include <cutils/properties.h>
+#endif
+>>>>>>> aosp/master
 
 #define  TRACE_TAG  TRACE_TRANSPORT
 #include "adb.h"

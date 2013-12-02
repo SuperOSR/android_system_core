@@ -20,7 +20,10 @@
 struct autosuspend_ops {
     int (*enable)(void);
     int (*disable)(void);
+<<<<<<< HEAD
 	int (*bootfast)(void);
+=======
+>>>>>>> aosp/master
 };
 
 struct autosuspend_ops *autosuspend_autosleep_init(void);

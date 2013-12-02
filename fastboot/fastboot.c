@@ -42,6 +42,10 @@
 
 #include <sys/time.h>
 #include <sys/types.h>
+<<<<<<< HEAD
+=======
+#include <sys/stat.h>
+>>>>>>> aosp/master
 
 #include <bootimg.h>
 #include <sparse/sparse.h>
@@ -53,6 +57,11 @@
 #define O_BINARY 0
 #endif
 
+<<<<<<< HEAD
+=======
+#define ARRAY_SIZE(a) (sizeof(a)/sizeof(*(a)))
+
+>>>>>>> aosp/master
 char cur_product[FB_RESPONSE_SZ + 1];
 
 void bootimg_set_cmdline(boot_img_hdr *h, const char *cmdline);
@@ -80,6 +89,30 @@ unsigned ramdisk_offset = 0x01000000;
 unsigned second_offset  = 0x00f00000;
 unsigned tags_offset    = 0x00000100;
 
+<<<<<<< HEAD
+=======
+enum fb_buffer_type {
+    FB_BUFFER,
+    FB_BUFFER_SPARSE,
+};
+
+struct fastboot_buffer {
+    enum fb_buffer_type type;
+    void *data;
+    unsigned int sz;
+};
+
+static struct {
+    char img_name[13];
+    char sig_name[13];
+    char part_name[9];
+    bool is_optional;
+} images[3] = {
+    {"boot.img", "boot.sig", "boot", false},
+    {"recovery.img", "recovery.sig", "recovery", true},
+    {"system.img", "system.sig", "system", false},
+};
+>>>>>>> aosp/master
 
 void get_my_path(char *path);
 
@@ -123,6 +156,7 @@ char *find_item(const char *item, const char *product)
     return strdup(path);
 }
 
+<<<<<<< HEAD
 #ifdef _WIN32
 void *load_file(const char *fn, unsigned *_sz);
 int64_t file_size(const char *fn);
@@ -161,6 +195,30 @@ void *load_file(const char *fn, unsigned *_sz)
     if(sz < 0) goto oops;
 
     if(lseek(fd, 0, SEEK_SET) != 0) goto oops;
+=======
+static int64_t file_size(int fd)
+{
+    struct stat st;
+    int ret;
+
+    ret = fstat(fd, &st);
+
+    return ret ? -1 : st.st_size;
+}
+
+static void *load_fd(int fd, unsigned *_sz)
+{
+    char *data;
+    int sz;
+    int errno_tmp;
+
+    data = 0;
+
+    sz = file_size(fd);
+    if (sz < 0) {
+        goto oops;
+    }
+>>>>>>> aosp/master
 
     data = (char*) malloc(sz);
     if(data == 0) goto oops;
@@ -178,7 +236,20 @@ oops:
     errno = errno_tmp;
     return 0;
 }
+<<<<<<< HEAD
 #endif
+=======
+
+static void *load_file(const char *fn, unsigned *_sz)
+{
+    int fd;
+
+    fd = open(fn, O_RDONLY | O_BINARY);
+    if(fd < 0) return 0;
+
+    return load_fd(fd, _sz);
+}
+>>>>>>> aosp/master
 
 int match_fastboot_with_serial(usb_ifc_info *info, const char *local_serial)
 {
@@ -385,6 +456,34 @@ void *unzip_file(zipfile_t zip, const char *name, unsigned *sz)
     return data;
 }
 
+<<<<<<< HEAD
+=======
+static int unzip_to_file(zipfile_t zip, char *name)
+{
+    int fd;
+    char *data;
+    unsigned sz;
+
+    fd = fileno(tmpfile());
+    if (fd < 0) {
+        return -1;
+    }
+
+    data = unzip_file(zip, name, &sz);
+    if (data == 0) {
+        return -1;
+    }
+
+    if (write(fd, data, sz) != sz) {
+        fd = -1;
+    }
+
+    free(data);
+    lseek(fd, 0, SEEK_SET);
+    return fd;
+}
+
+>>>>>>> aosp/master
 static char *strip(char *s)
 {
     int n;
@@ -489,14 +588,20 @@ void queue_info_dump(void)
     fb_queue_notice("--------------------------------------------");
 }
 
+<<<<<<< HEAD
 
 struct sparse_file **load_sparse_files(const char *fname, int max_size)
 {
     int fd;
+=======
+static struct sparse_file **load_sparse_files(int fd, int max_size)
+{
+>>>>>>> aosp/master
     struct sparse_file *s;
     int files;
     struct sparse_file **out_s;
 
+<<<<<<< HEAD
     fd = open(fname, O_RDONLY | O_BINARY);
     if (fd < 0) {
         die("cannot open '%s'\n", fname);
@@ -505,11 +610,20 @@ struct sparse_file **load_sparse_files(const char *fname, int max_size)
     s = sparse_file_import_auto(fd, false);
     if (!s) {
         die("cannot sparse read file '%s'\n", fname);
+=======
+    s = sparse_file_import_auto(fd, false);
+    if (!s) {
+        die("cannot sparse read file\n");
+>>>>>>> aosp/master
     }
 
     files = sparse_file_resparse(s, max_size, NULL, 0);
     if (files < 0) {
+<<<<<<< HEAD
         die("Failed to resparse '%s'\n", fname);
+=======
+        die("Failed to resparse\n");
+>>>>>>> aosp/master
     }
 
     out_s = calloc(sizeof(struct sparse_file *), files + 1);
@@ -519,7 +633,11 @@ struct sparse_file **load_sparse_files(const char *fname, int max_size)
 
     files = sparse_file_resparse(s, max_size, out_s, files);
     if (files < 0) {
+<<<<<<< HEAD
         die("Failed to resparse '%s'\n", fname);
+=======
+        die("Failed to resparse\n");
+>>>>>>> aosp/master
     }
 
     return out_s;
@@ -580,12 +698,18 @@ static int needs_erase(const char *part)
      return fb_format_supported(usb, part);
 }
 
+<<<<<<< HEAD
 void do_flash(usb_handle *usb, const char *pname, const char *fname)
+=======
+static int load_buf_fd(usb_handle *usb, int fd,
+        struct fastboot_buffer *buf)
+>>>>>>> aosp/master
 {
     int64_t sz64;
     void *data;
     int64_t limit;
 
+<<<<<<< HEAD
     sz64 = file_size(fname);
     limit = get_sparse_limit(usb, sz64);
     if (limit) {
@@ -605,6 +729,75 @@ void do_flash(usb_handle *usb, const char *pname, const char *fname)
     }
 }
 
+=======
+    sz64 = file_size(fd);
+    if (sz64 < 0) {
+        return -1;
+    }
+    limit = get_sparse_limit(usb, sz64);
+    if (limit) {
+        struct sparse_file **s = load_sparse_files(fd, limit);
+        if (s == NULL) {
+            return -1;
+        }
+        buf->type = FB_BUFFER_SPARSE;
+        buf->data = s;
+    } else {
+        unsigned int sz;
+        data = load_fd(fd, &sz);
+        if (data == 0) return -1;
+        buf->type = FB_BUFFER;
+        buf->data = data;
+        buf->sz = sz;
+    }
+
+    return 0;
+}
+
+static int load_buf(usb_handle *usb, const char *fname,
+        struct fastboot_buffer *buf)
+{
+    int fd;
+
+    fd = open(fname, O_RDONLY | O_BINARY);
+    if (fd < 0) {
+        die("cannot open '%s'\n", fname);
+    }
+
+    return load_buf_fd(usb, fd, buf);
+}
+
+static void flash_buf(const char *pname, struct fastboot_buffer *buf)
+{
+    struct sparse_file **s;
+
+    switch (buf->type) {
+        case FB_BUFFER_SPARSE:
+            s = buf->data;
+            while (*s) {
+                int64_t sz64 = sparse_file_len(*s, true, false);
+                fb_queue_flash_sparse(pname, *s++, sz64);
+            }
+            break;
+        case FB_BUFFER:
+            fb_queue_flash(pname, buf->data, buf->sz);
+            break;
+        default:
+            die("unknown buffer type: %d", buf->type);
+    }
+}
+
+void do_flash(usb_handle *usb, const char *pname, const char *fname)
+{
+    struct fastboot_buffer buf;
+
+    if (load_buf(usb, fname, &buf)) {
+        die("cannot load '%s'", fname);
+    }
+    flash_buf(pname, &buf);
+}
+
+>>>>>>> aosp/master
 void do_update_signature(zipfile_t zip, char *fn)
 {
     void *data;
@@ -615,13 +808,24 @@ void do_update_signature(zipfile_t zip, char *fn)
     fb_queue_command("signature", "installing signature");
 }
 
+<<<<<<< HEAD
 void do_update(char *fn, int erase_first)
+=======
+void do_update(usb_handle *usb, char *fn, int erase_first)
+>>>>>>> aosp/master
 {
     void *zdata;
     unsigned zsize;
     void *data;
     unsigned sz;
     zipfile_t zip;
+<<<<<<< HEAD
+=======
+    int fd;
+    int rc;
+    struct fastboot_buffer buf;
+    int i;
+>>>>>>> aosp/master
 
     queue_info_dump();
 
@@ -650,6 +854,7 @@ void do_update(char *fn, int erase_first)
 
     setup_requirements(data, sz);
 
+<<<<<<< HEAD
     data = unzip_file(zip, "boot.img", &sz);
     if (data == 0) die("update package missing boot.img");
     do_update_signature(zip, "boot.sig");
@@ -674,6 +879,27 @@ void do_update(char *fn, int erase_first)
         fb_queue_erase("system");
     }
     fb_queue_flash("system", data, sz);
+=======
+    for (i = 0; i < ARRAY_SIZE(images); i++) {
+        fd = unzip_to_file(zip, images[i].img_name);
+        if (fd < 0) {
+            if (images[i].is_optional)
+                continue;
+            die("update package missing %s", images[i].img_name);
+        }
+        rc = load_buf_fd(usb, fd, &buf);
+        if (rc) die("cannot load %s from flash", images[i].img_name);
+        do_update_signature(zip, images[i].sig_name);
+        if (erase_first && needs_erase(images[i].part_name)) {
+            fb_queue_erase(images[i].part_name);
+        }
+        flash_buf(images[i].part_name, &buf);
+        /* not closing the fd here since the sparse code keeps the fd around
+         * but hasn't mmaped data yet. The tmpfile will get cleaned up when the
+         * program exits.
+         */
+    }
+>>>>>>> aosp/master
 }
 
 void do_send_signature(char *fn)
@@ -694,11 +920,20 @@ void do_send_signature(char *fn)
     fb_queue_command("signature", "installing signature");
 }
 
+<<<<<<< HEAD
 void do_flashall(int erase_first)
+=======
+void do_flashall(usb_handle *usb, int erase_first)
+>>>>>>> aosp/master
 {
     char *fname;
     void *data;
     unsigned sz;
+<<<<<<< HEAD
+=======
+    struct fastboot_buffer buf;
+    int i;
+>>>>>>> aosp/master
 
     queue_info_dump();
 
@@ -710,6 +945,7 @@ void do_flashall(int erase_first)
     if (data == 0) die("could not load android-info.txt: %s", strerror(errno));
     setup_requirements(data, sz);
 
+<<<<<<< HEAD
     fname = find_item("boot", product);
     data = load_file(fname, &sz);
     if (data == 0) die("could not load boot.img: %s", strerror(errno));
@@ -737,6 +973,21 @@ void do_flashall(int erase_first)
         fb_queue_erase("system");
     }
     fb_queue_flash("system", data, sz);
+=======
+    for (i = 0; i < ARRAY_SIZE(images); i++) {
+        fname = find_item(images[i].part_name, product);
+        if (load_buf(usb, fname, &buf)) {
+            if (images[i].is_optional)
+                continue;
+            die("could not load %s\n", images[i].img_name);
+        }
+        do_send_signature(fname);
+        if (erase_first && needs_erase(images[i].part_name)) {
+            fb_queue_erase(images[i].part_name);
+        }
+        flash_buf(images[i].part_name, &buf);
+    }
+>>>>>>> aosp/master
 }
 
 #define skip(n) do { argc -= (n); argv += (n); } while (0)
@@ -996,6 +1247,7 @@ int main(int argc, char **argv)
             fb_queue_flash(pname, data, sz);
         } else if(!strcmp(*argv, "flashall")) {
             skip(1);
+<<<<<<< HEAD
             do_flashall(erase_first);
             wants_reboot = 1;
         } else if(!strcmp(*argv, "update")) {
@@ -1004,6 +1256,16 @@ int main(int argc, char **argv)
                 skip(2);
             } else {
                 do_update("update.zip", erase_first);
+=======
+            do_flashall(usb, erase_first);
+            wants_reboot = 1;
+        } else if(!strcmp(*argv, "update")) {
+            if (argc > 1) {
+                do_update(usb, argv[1], erase_first);
+                skip(2);
+            } else {
+                do_update(usb, "update.zip", erase_first);
+>>>>>>> aosp/master
                 skip(1);
             }
             wants_reboot = 1;

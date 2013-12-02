@@ -40,6 +40,11 @@ void klog_init(void)
 
     if (mknod(name, S_IFCHR | 0600, (1 << 8) | 11) == 0) {
         klog_fd = open(name, O_WRONLY);
+<<<<<<< HEAD
+=======
+        if (klog_fd < 0)
+                return;
+>>>>>>> aosp/master
         fcntl(klog_fd, F_SETFD, FD_CLOEXEC);
         unlink(name);
     }
@@ -54,6 +59,10 @@ void klog_write(int level, const char *fmt, ...)
 
     if (level > klog_level) return;
     if (klog_fd < 0) klog_init();
+<<<<<<< HEAD
+=======
+    if (klog_fd < 0) return;
+>>>>>>> aosp/master
 
     va_start(ap, fmt);
     vsnprintf(buf, LOG_BUF_MAX, fmt, ap);

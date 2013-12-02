@@ -43,9 +43,12 @@ int autosuspend_enable(void);
  */
 int autosuspend_disable(void);
 
+<<<<<<< HEAD
 
 int autosuspend_bootfast(void);
 
+=======
+>>>>>>> aosp/master
 __END_DECLS
 
 #endif

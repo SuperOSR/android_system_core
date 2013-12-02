@@ -225,6 +225,7 @@ framebuffer:
       If the adbd daemon doesn't have sufficient privileges to open
       the framebuffer device, the connection is simply closed immediately.
 
+<<<<<<< HEAD
 dns:<server-name>
     This service is an exception because it only runs within the ADB server.
     It is used to implement USB networking, i.e. to provide a network connection
@@ -246,6 +247,8 @@ recover:<size>
     This service can only work when the device is in recovery mode. Otherwise,
     the /tmp directory doesn't exist and the connection will be closed immediately.
 
+=======
+>>>>>>> aosp/master
 jdwp:<pid>
     Connects to the JDWP thread running in the VM of process <pid>.
 

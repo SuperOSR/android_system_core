@@ -72,6 +72,11 @@ static char *find_mount(const char *dir)
 static int remount_system()
 {
     char *dev;
+<<<<<<< HEAD
+=======
+    int fd;
+    int OFF = 0;
+>>>>>>> aosp/master
 
     if (system_ro == 0) {
         return 0;
@@ -82,6 +87,16 @@ static int remount_system()
     if (!dev)
         return -1;
 
+<<<<<<< HEAD
+=======
+    fd = unix_open(dev, O_RDONLY);
+    if (fd < 0)
+        return -1;
+
+    ioctl(fd, BLKROSET, &OFF);
+    adb_close(fd);
+
+>>>>>>> aosp/master
     system_ro = mount(dev, "/system", "none", MS_REMOUNT, NULL);
 
     free(dev);

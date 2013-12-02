@@ -1877,7 +1877,11 @@ void scanline_perspective(context_t* c)
             struct {
                 int32_t s, sq;
                 int32_t t, tq;
+<<<<<<< HEAD
             };
+=======
+            } sqtq;
+>>>>>>> aosp/master
             struct {
                 int32_t v, q;
             } st[2];
@@ -1916,10 +1920,17 @@ void scanline_perspective(context_t* c)
         int32_t t =   tmu.shade.it0 +
                      (tmu.shade.idtdy * ys) + (tmu.shade.idtdx * xs) +
                      ((tmu.shade.idtdx + tmu.shade.idtdy)>>1);
+<<<<<<< HEAD
         tc[i].s  = s;
         tc[i].t  = t;
         tc[i].sq = gglMulx(s, q0, iwscale);
         tc[i].tq = gglMulx(t, q0, iwscale);
+=======
+        tc[i].sqtq.s  = s;
+        tc[i].sqtq.t  = t;
+        tc[i].sqtq.sq = gglMulx(s, q0, iwscale);
+        tc[i].sqtq.tq = gglMulx(t, q0, iwscale);
+>>>>>>> aosp/master
     }
 
     int32_t span = 0;

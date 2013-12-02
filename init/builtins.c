@@ -32,6 +32,10 @@
 #include <sys/wait.h>
 #include <linux/loop.h>
 #include <cutils/partition_utils.h>
+<<<<<<< HEAD
+=======
+#include <cutils/android_reboot.h>
+>>>>>>> aosp/master
 #include <sys/system_properties.h>
 #include <fs_mgr.h>
 
@@ -56,7 +60,11 @@ static int write_file(const char *path, const char *value)
 {
     int fd, ret, len;
 
+<<<<<<< HEAD
     fd = open(path, O_WRONLY|O_CREAT, 0622);
+=======
+    fd = open(path, O_WRONLY|O_CREAT|O_NOFOLLOW, 0600);
+>>>>>>> aosp/master
 
     if (fd < 0)
         return -errno;
@@ -248,6 +256,7 @@ int do_export(int nargs, char **args)
     return 0;
 }
 
+<<<<<<< HEAD
 int do_format_userdata(int argc, char **argv)
 {
 	const char *devicePath = argv[1];
@@ -287,6 +296,8 @@ int do_format_userdata(int argc, char **argv)
 	}
 }
 
+=======
+>>>>>>> aosp/master
 int do_hostname(int nargs, char **args)
 {
     return write_file("/proc/sys/kernel/hostname", args[1]);
@@ -554,6 +565,21 @@ int do_mount_all(int nargs, char **args)
     return ret;
 }
 
+<<<<<<< HEAD
+=======
+int do_swapon_all(int nargs, char **args)
+{
+    struct fstab *fstab;
+    int ret;
+
+    fstab = fs_mgr_read_fstab(args[1]);
+    ret = fs_mgr_swapon_all(fstab);
+    fs_mgr_free_fstab(fstab);
+
+    return ret;
+}
+
+>>>>>>> aosp/master
 int do_setcon(int nargs, char **args) {
     if (is_selinux_enabled() <= 0)
         return 0;
@@ -637,6 +663,46 @@ int do_restart(int nargs, char **args)
     return 0;
 }
 
+<<<<<<< HEAD
+=======
+int do_powerctl(int nargs, char **args)
+{
+    char command[PROP_VALUE_MAX];
+    int res;
+    int len = 0;
+    int cmd = 0;
+    char *reboot_target;
+
+    res = expand_props(command, args[1], sizeof(command));
+    if (res) {
+        ERROR("powerctl: cannot expand '%s'\n", args[1]);
+        return -EINVAL;
+    }
+
+    if (strncmp(command, "shutdown", 8) == 0) {
+        cmd = ANDROID_RB_POWEROFF;
+        len = 8;
+    } else if (strncmp(command, "reboot", 6) == 0) {
+        cmd = ANDROID_RB_RESTART2;
+        len = 6;
+    } else {
+        ERROR("powerctl: unrecognized command '%s'\n", command);
+        return -EINVAL;
+    }
+
+    if (command[len] == ',') {
+        reboot_target = &command[len + 1];
+    } else if (command[len] == '\0') {
+        reboot_target = "";
+    } else {
+        ERROR("powerctl: unrecognized reboot target '%s'\n", &command[len]);
+        return -EINVAL;
+    }
+
+    return android_reboot(cmd, 0, reboot_target);
+}
+
+>>>>>>> aosp/master
 int do_trigger(int nargs, char **args)
 {
     action_for_each_trigger(args[1], action_add_queue_tail);

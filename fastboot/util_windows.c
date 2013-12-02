@@ -36,6 +36,7 @@
 
 #include <windows.h>
 
+<<<<<<< HEAD
 int64_t file_size(const char *fn)
 {
     HANDLE    file;
@@ -59,6 +60,8 @@ int64_t file_size(const char *fn)
     return sz;
 }
 
+=======
+>>>>>>> aosp/master
 void get_my_path(char exe[PATH_MAX])
 {
 	char*  r;
@@ -70,6 +73,7 @@ void get_my_path(char exe[PATH_MAX])
 		*r = 0;
 }
 
+<<<<<<< HEAD
 
 void *load_file(const char *fn, unsigned *_sz)
 {
@@ -114,3 +118,5 @@ void *load_file(const char *fn, unsigned *_sz)
     *_sz = (unsigned) sz;
     return  data;
 }
+=======
+>>>>>>> aosp/master

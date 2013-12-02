@@ -264,6 +264,7 @@ void generate_ext4_image(struct image_data *image)
     int fd;
     struct stat st;
 
+<<<<<<< HEAD
 #ifdef USE_MINGW
     /* Ideally we should use tmpfile() here, the same as with unix version.
      * But unfortunately it is not portable as it is not clear whether this
@@ -279,6 +280,9 @@ void generate_ext4_image(struct image_data *image)
 #else
     fd = fileno(tmpfile());
 #endif
+=======
+    fd = fileno(tmpfile());
+>>>>>>> aosp/master
     make_ext4fs_sparse_fd(fd, image->partition_size, NULL, NULL);
 
     fstat(fd, &st);

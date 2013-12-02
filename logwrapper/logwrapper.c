@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+<<<<<<< HEAD
+=======
+#include <errno.h>
+>>>>>>> aosp/master
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/wait.h>
@@ -80,7 +84,11 @@ int main(int argc, char* argv[]) {
     }
 
     rc = android_fork_execvp_ext(argc, &argv[0], &status, true,
+<<<<<<< HEAD
                                  log_target, abbreviated);
+=======
+                                 log_target, abbreviated, NULL);
+>>>>>>> aosp/master
     if (!rc) {
         if (WIFEXITED(status))
             rc = WEXITSTATUS(status);

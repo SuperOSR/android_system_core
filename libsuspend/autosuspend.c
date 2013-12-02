@@ -107,6 +107,7 @@ int autosuspend_disable(void)
     autosuspend_enabled = false;
     return 0;
 }
+<<<<<<< HEAD
 
 int autosuspend_bootfast(void)
 {
@@ -131,3 +132,5 @@ int autosuspend_bootfast(void)
     autosuspend_enabled = true;
     return 0;
 }
+=======
+>>>>>>> aosp/master

@@ -50,3 +50,7 @@
 
 $(call add-clean-step, rm -rf $(PRODUCT_OUT)/root/init.rc)
 $(call add-clean-step, rm -rf $(PRODUCT_OUT)/root/init.rc)
+<<<<<<< HEAD
+=======
+$(call add-clean-step, rm -rf $(PRODUCT_OUT)/system/bin/reboot)
+>>>>>>> aosp/master

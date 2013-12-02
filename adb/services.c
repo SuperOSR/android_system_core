@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+<<<<<<< HEAD
+=======
+#include <stddef.h>
+>>>>>>> aosp/master
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -34,6 +38,10 @@
 #  endif
 #else
 #  include <cutils/android_reboot.h>
+<<<<<<< HEAD
+=======
+#  include <cutils/properties.h>
+>>>>>>> aosp/master
 #endif
 
 typedef struct stinfo stinfo;
@@ -53,6 +61,7 @@ void *service_bootstrap_func(void *x)
     return 0;
 }
 
+<<<<<<< HEAD
 #if ADB_HOST
 ADB_MUTEX_DEFINE( dns_lock );
 
@@ -106,6 +115,9 @@ static void recover_service(int s, void *cookie)
     fd = adb_creat("/tmp/update.begin", 0644);
     adb_close(fd);
 }
+=======
+#if !ADB_HOST
+>>>>>>> aosp/master
 
 void restart_root_service(int fd, void *cookie)
 {
@@ -165,6 +177,10 @@ void restart_usb_service(int fd, void *cookie)
 void reboot_service(int fd, void *arg)
 {
     char buf[100];
+<<<<<<< HEAD
+=======
+    char property_val[PROPERTY_VALUE_MAX];
+>>>>>>> aosp/master
     int pid, ret;
 
     sync();
@@ -182,17 +198,34 @@ void reboot_service(int fd, void *arg)
         waitpid(pid, &ret, 0);
     }
 
+<<<<<<< HEAD
     ret = android_reboot(ANDROID_RB_RESTART2, 0, (char *) arg);
     if (ret < 0) {
         snprintf(buf, sizeof(buf), "reboot failed: %s\n", strerror(errno));
         writex(fd, buf, strlen(buf));
     }
+=======
+    ret = snprintf(property_val, sizeof(property_val), "reboot,%s", (char *) arg);
+    if (ret >= (int) sizeof(property_val)) {
+        snprintf(buf, sizeof(buf), "reboot string too long. length=%d\n", ret);
+        writex(fd, buf, strlen(buf));
+        goto cleanup;
+    }
+
+    ret = property_set(ANDROID_RB_PROPERTY, property_val);
+    if (ret < 0) {
+        snprintf(buf, sizeof(buf), "reboot failed: %d\n", ret);
+        writex(fd, buf, strlen(buf));
+    }
+cleanup:
+>>>>>>> aosp/master
     free(arg);
     adb_close(fd);
 }
 
 #endif
 
+<<<<<<< HEAD
 #if 0
 static void echo_service(int fd, void *cookie)
 {
@@ -227,6 +260,8 @@ done:
 }
 #endif
 
+=======
+>>>>>>> aosp/master
 static int create_service_thread(void (*func)(int, void *), void *cookie)
 {
     stinfo *sti;
@@ -413,9 +448,13 @@ int service_to_fd(const char *name)
                 disable_tcp_nagle(ret);
         } else {
 #if ADB_HOST
+<<<<<<< HEAD
             adb_mutex_lock(&dns_lock);
             ret = socket_network_client(name + 1, port, SOCK_STREAM);
             adb_mutex_unlock(&dns_lock);
+=======
+            ret = socket_network_client(name + 1, port, SOCK_STREAM);
+>>>>>>> aosp/master
 #else
             return -1;
 #endif
@@ -434,18 +473,25 @@ int service_to_fd(const char *name)
         ret = socket_local_client(name + 16,
                 ANDROID_SOCKET_NAMESPACE_FILESYSTEM, SOCK_STREAM);
 #endif
+<<<<<<< HEAD
 #if ADB_HOST
     } else if(!strncmp("dns:", name, 4)){
         char *n = strdup(name + 4);
         if(n == 0) return -1;
         ret = create_service_thread(dns_service, n);
 #else /* !ADB_HOST */
+=======
+#if !ADB_HOST
+>>>>>>> aosp/master
     } else if(!strncmp("dev:", name, 4)) {
         ret = unix_open(name + 4, O_RDWR);
     } else if(!strncmp(name, "framebuffer:", 12)) {
         ret = create_service_thread(framebuffer_service, 0);
+<<<<<<< HEAD
     } else if(recovery_mode && !strncmp(name, "recover:", 8)) {
         ret = create_service_thread(recover_service, (void*) atoi(name + 8));
+=======
+>>>>>>> aosp/master
     } else if (!strncmp(name, "jdwp:", 5)) {
         ret = create_jdwp_connection_fd(atoi(name+5));
     } else if (!strncmp(name, "log:", 4)) {
@@ -481,10 +527,13 @@ int service_to_fd(const char *name)
     } else if(!strncmp(name, "usb:", 4)) {
         ret = create_service_thread(restart_usb_service, NULL);
 #endif
+<<<<<<< HEAD
 #if 0
     } else if(!strncmp(name, "echo:", 5)){
         ret = create_service_thread(echo_service, 0);
 #endif
+=======
+>>>>>>> aosp/master
     }
     if (ret >= 0) {
         close_on_exec(ret);
@@ -519,6 +568,127 @@ static void wait_for_state(int fd, void* cookie)
     adb_close(fd);
     D("wait_for_state is done\n");
 }
+<<<<<<< HEAD
+=======
+
+static void connect_device(char* host, char* buffer, int buffer_size)
+{
+    int port, fd;
+    char* portstr = strchr(host, ':');
+    char hostbuf[100];
+    char serial[100];
+    int ret;
+
+    strncpy(hostbuf, host, sizeof(hostbuf) - 1);
+    if (portstr) {
+        if (portstr - host >= (ptrdiff_t)sizeof(hostbuf)) {
+            snprintf(buffer, buffer_size, "bad host name %s", host);
+            return;
+        }
+        // zero terminate the host at the point we found the colon
+        hostbuf[portstr - host] = 0;
+        if (sscanf(portstr + 1, "%d", &port) == 0) {
+            snprintf(buffer, buffer_size, "bad port number %s", portstr);
+            return;
+        }
+    } else {
+        port = DEFAULT_ADB_LOCAL_TRANSPORT_PORT;
+    }
+
+    snprintf(serial, sizeof(serial), "%s:%d", hostbuf, port);
+
+    fd = socket_network_client(hostbuf, port, SOCK_STREAM);
+    if (fd < 0) {
+        snprintf(buffer, buffer_size, "unable to connect to %s:%d", host, port);
+        return;
+    }
+
+    D("client: connected on remote on fd %d\n", fd);
+    close_on_exec(fd);
+    disable_tcp_nagle(fd);
+
+    ret = register_socket_transport(fd, serial, port, 0);
+    if (ret < 0) {
+        adb_close(fd);
+        snprintf(buffer, buffer_size, "already connected to %s", serial);
+    } else {
+        snprintf(buffer, buffer_size, "connected to %s", serial);
+    }
+}
+
+void connect_emulator(char* port_spec, char* buffer, int buffer_size)
+{
+    char* port_separator = strchr(port_spec, ',');
+    if (!port_separator) {
+        snprintf(buffer, buffer_size,
+                "unable to parse '%s' as <console port>,<adb port>",
+                port_spec);
+        return;
+    }
+
+    // Zero-terminate console port and make port_separator point to 2nd port.
+    *port_separator++ = 0;
+    int console_port = strtol(port_spec, NULL, 0);
+    int adb_port = strtol(port_separator, NULL, 0);
+    if (!(console_port > 0 && adb_port > 0)) {
+        *(port_separator - 1) = ',';
+        snprintf(buffer, buffer_size,
+                "Invalid port numbers: Expected positive numbers, got '%s'",
+                port_spec);
+        return;
+    }
+
+    /* Check if the emulator is already known.
+     * Note: There's a small but harmless race condition here: An emulator not
+     * present just yet could be registered by another invocation right
+     * after doing this check here. However, local_connect protects
+     * against double-registration too. From here, a better error message
+     * can be produced. In the case of the race condition, the very specific
+     * error message won't be shown, but the data doesn't get corrupted. */
+    atransport* known_emulator = find_emulator_transport_by_adb_port(adb_port);
+    if (known_emulator != NULL) {
+        snprintf(buffer, buffer_size,
+                "Emulator on port %d already registered.", adb_port);
+        return;
+    }
+
+    /* Check if more emulators can be registered. Similar unproblematic
+     * race condition as above. */
+    int candidate_slot = get_available_local_transport_index();
+    if (candidate_slot < 0) {
+        snprintf(buffer, buffer_size, "Cannot accept more emulators.");
+        return;
+    }
+
+    /* Preconditions met, try to connect to the emulator. */
+    if (!local_connect_arbitrary_ports(console_port, adb_port)) {
+        snprintf(buffer, buffer_size,
+                "Connected to emulator on ports %d,%d", console_port, adb_port);
+    } else {
+        snprintf(buffer, buffer_size,
+                "Could not connect to emulator on ports %d,%d",
+                console_port, adb_port);
+    }
+}
+
+static void connect_service(int fd, void* cookie)
+{
+    char buf[4096];
+    char resp[4096];
+    char *host = cookie;
+
+    if (!strncmp(host, "emu:", 4)) {
+        connect_emulator(host + 4, buf, sizeof(buf));
+    } else {
+        connect_device(host, buf, sizeof(buf));
+    }
+
+    // Send response for emulator and device
+    snprintf(resp, sizeof(resp), "%04x%s",(unsigned)strlen(buf), buf);
+    writex(fd, resp, strlen(resp));
+    adb_close(fd);
+}
+>>>>>>> aosp/master
 #endif
 
 #if ADB_HOST
@@ -552,6 +722,13 @@ asocket*  host_service_to_socket(const char*  name, const char *serial)
 
         int fd = create_service_thread(wait_for_state, sinfo);
         return create_local_socket(fd);
+<<<<<<< HEAD
+=======
+    } else if (!strncmp(name, "connect:", 8)) {
+        const char *host = name + 8;
+        int fd = create_service_thread(connect_service, (void *)host);
+        return create_local_socket(fd);
+>>>>>>> aosp/master
     }
     return NULL;
 }

@@ -36,9 +36,15 @@
 /*
  *  WARNING WARNING WARNING WARNING
  *
+<<<<<<< HEAD
  *  This program runs as set-uid root on Android production devices.
  *  Be very conservative when modifying it to avoid any serious
  *  security issue. Keep in mind the following:
+=======
+ *  This program runs with CAP_SETUID and CAP_SETGID capabilities on Android
+ *  production devices. Be very conservative when modifying it to avoid any
+ *  serious security issue. Keep in mind the following:
+>>>>>>> aosp/master
  *
  *  - This program should only run for the 'root' or 'shell' users
  *
@@ -61,14 +67,28 @@
  *
  *   run-as <package-name> <command> <args>
  *
+<<<<<<< HEAD
  *  The 'run-as' binary is setuid, but will check the following:
+=======
+ *  The 'run-as' binary is installed with CAP_SETUID and CAP_SETGID file
+ *  capabilities, but will check the following:
+>>>>>>> aosp/master
  *
  *  - that it is invoked from the 'shell' or 'root' user (abort otherwise)
  *  - that '<package-name>' is the name of an installed and debuggable package
  *  - that the package's data directory is well-formed (see package.c)
  *
+<<<<<<< HEAD
  *  If so, it will cd to the package's data directory, drop to the application's
  *  user id / group id then run the command there.
+=======
+ *  If so, it will drop to the application's user id / group id, cd to the
+ *  package's data directory, then run the command there.
+ *
+ *  NOTE: In the future it might not be possible to cd to the package's data
+ *  directory under that package's user id / group id, in which case this
+ *  utility will need to be changed accordingly.
+>>>>>>> aosp/master
  *
  *  This can be useful for a number of different things on production devices:
  *
@@ -141,6 +161,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
+<<<<<<< HEAD
     /* then move to it */
     {
         int ret;
@@ -154,6 +175,8 @@ int main(int argc, char **argv)
         }
     }
 
+=======
+>>>>>>> aosp/master
     /* Ensure that we change all real/effective/saved IDs at the
      * same time to avoid nasty surprises.
      */
@@ -168,6 +191,22 @@ int main(int argc, char **argv)
         return 1;
     }
 
+<<<<<<< HEAD
+=======
+    /* cd into the data directory */
+    {
+        int ret;
+        do {
+            ret = chdir(info.dataDir);
+        } while (ret < 0 && errno == EINTR);
+
+        if (ret < 0) {
+            panic("Could not cd to package's data directory: %s\n", strerror(errno));
+            return 1;
+        }
+    }
+
+>>>>>>> aosp/master
     /* User specified command for exec. */
     if (argc >= 3 ) {
         if (execvp(argv[2], argv+2) < 0) {

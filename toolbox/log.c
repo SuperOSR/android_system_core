@@ -30,7 +30,11 @@
  */
 
 #include <stdio.h>
+<<<<<<< HEAD
 #include <cutils/logd.h>
+=======
+#include <log/logd.h>
+>>>>>>> aosp/master
 #include <ctype.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -130,8 +134,13 @@ int log_main(int argc, char *argv[])
     buffer[0] = '\0';
     
     for (i = optind ; i < argc ; i++) {
+<<<<<<< HEAD
         strncat(buffer, argv[i], sizeof(buffer)-1);
         strncat(buffer, " ", sizeof(buffer)-1);
+=======
+        strlcat(buffer, argv[i], sizeof(buffer)-1);
+        strlcat(buffer, " ", sizeof(buffer)-1);
+>>>>>>> aosp/master
     }
 
     if(buffer[0] == 0) {

@@ -16,6 +16,10 @@
 
 #include <unistd.h>
 #include <sys/reboot.h>
+<<<<<<< HEAD
+=======
+#include <sys/syscall.h>
+>>>>>>> aosp/master
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -100,17 +104,25 @@ static void remount_ro(void)
     return;
 }
 
+<<<<<<< HEAD
 extern int write_misc(char *reason);
+=======
+>>>>>>> aosp/master
 
 int android_reboot(int cmd, int flags, char *arg)
 {
     int ret;
 
+<<<<<<< HEAD
     if (!(flags & ANDROID_RB_FLAG_NO_SYNC))
         sync();
     sleep(2);
     if (!(flags & ANDROID_RB_FLAG_NO_REMOUNT_RO))
         remount_ro();
+=======
+    sync();
+    remount_ro();
+>>>>>>> aosp/master
 
     switch (cmd) {
         case ANDROID_RB_RESTART:
@@ -122,10 +134,15 @@ int android_reboot(int cmd, int flags, char *arg)
             break;
 
         case ANDROID_RB_RESTART2:
+<<<<<<< HEAD
             //ret = __reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
             //               LINUX_REBOOT_CMD_RESTART2, arg);
             write_misc(arg);
 			ret = reboot(RB_AUTOBOOT);
+=======
+            ret = syscall(__NR_reboot, LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
+                           LINUX_REBOOT_CMD_RESTART2, arg);
+>>>>>>> aosp/master
             break;
 
         default:

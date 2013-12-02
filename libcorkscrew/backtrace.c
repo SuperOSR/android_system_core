@@ -319,6 +319,7 @@ void format_backtrace_line(unsigned frameNumber, const backtrace_frame_t* frame 
     if (symbolName) {
         uint32_t pc_offset = symbol->relative_pc - symbol->relative_symbol_addr;
         if (pc_offset) {
+<<<<<<< HEAD
             snprintf(buffer, bufferSize, "#%02u  pc %p  %.*s (%.*s+%u)",
                     frameNumber, (void*) symbol->relative_pc, fieldWidth, mapName,
                     fieldWidth, symbolName, pc_offset);
@@ -330,5 +331,19 @@ void format_backtrace_line(unsigned frameNumber, const backtrace_frame_t* frame 
     } else {
         snprintf(buffer, bufferSize, "#%02u  pc %p  %.*s",
                 frameNumber, (void*) symbol->relative_pc, fieldWidth, mapName);
+=======
+            snprintf(buffer, bufferSize, "#%02u  pc %08x  %.*s (%.*s+%u)",
+                    frameNumber, (unsigned int) symbol->relative_pc,
+                    fieldWidth, mapName, fieldWidth, symbolName, pc_offset);
+        } else {
+            snprintf(buffer, bufferSize, "#%02u  pc %08x  %.*s (%.*s)",
+                    frameNumber, (unsigned int) symbol->relative_pc,
+                    fieldWidth, mapName, fieldWidth, symbolName);
+        }
+    } else {
+        snprintf(buffer, bufferSize, "#%02u  pc %08x  %.*s",
+                frameNumber, (unsigned int) symbol->relative_pc,
+                fieldWidth, mapName);
+>>>>>>> aosp/master
     }
 }

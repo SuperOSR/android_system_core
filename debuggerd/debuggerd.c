@@ -31,9 +31,16 @@
 #include <sys/stat.h>
 #include <sys/poll.h>
 
+<<<<<<< HEAD
 #include <cutils/sockets.h>
 #include <cutils/logd.h>
 #include <cutils/logger.h>
+=======
+#include <log/logd.h>
+#include <log/logger.h>
+
+#include <cutils/sockets.h>
+>>>>>>> aosp/master
 #include <cutils/properties.h>
 #include <cutils/debugger.h>
 
@@ -435,11 +442,20 @@ static int do_server() {
     signal(SIGBUS, SIG_DFL);
     signal(SIGFPE, SIG_DFL);
     signal(SIGSEGV, SIG_DFL);
+<<<<<<< HEAD
     signal(SIGPIPE, SIG_DFL);
+=======
+>>>>>>> aosp/master
 #ifdef SIGSTKFLT
     signal(SIGSTKFLT, SIG_DFL);
 #endif
 
+<<<<<<< HEAD
+=======
+    // Ignore failed writes to closed sockets
+    signal(SIGPIPE, SIG_IGN);
+
+>>>>>>> aosp/master
     logsocket = socket_local_client("logd",
             ANDROID_SOCKET_NAMESPACE_ABSTRACT, SOCK_DGRAM);
     if(logsocket < 0) {

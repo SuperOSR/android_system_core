@@ -138,6 +138,27 @@ parse_mount_options(char *arg, unsigned long rwflag, struct extra_opts *extra, i
 	return rwflag;
 }
 
+<<<<<<< HEAD
+=======
+/*
+ * Mark the given block device as read-write, using the BLKROSET ioctl.
+ */
+static void fs_set_blk_rw(const char *blockdev)
+{
+    int fd;
+    int OFF = 0;
+
+    fd = open(blockdev, O_RDONLY);
+    if (fd < 0) {
+        // should never happen
+        return;
+    }
+
+    ioctl(fd, BLKROSET, &OFF);
+    close(fd);
+}
+
+>>>>>>> aosp/master
 static char *progname;
 
 static struct extra_opts extra;
@@ -179,6 +200,13 @@ do_mount(char *dev, char *dir, char *type, unsigned long rwflag, void *data, int
         dev = loopdev;
     }
 
+<<<<<<< HEAD
+=======
+    if ((rwflag & MS_RDONLY) == 0) {
+        fs_set_blk_rw(dev);
+    }
+
+>>>>>>> aosp/master
 	while ((s = strsep(&type, ",")) != NULL) {
 retry:
 		if (mount(dev, dir, s, rwflag, data) == -1) {

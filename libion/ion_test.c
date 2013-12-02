@@ -13,7 +13,10 @@
 
 #include <ion/ion.h>
 #include <linux/ion.h>
+<<<<<<< HEAD
 #include <linux/omap_ion.h>
+=======
+>>>>>>> aosp/master
 
 size_t len = 1024*1024, align = 0;
 int prot = PROT_READ | PROT_WRITE;

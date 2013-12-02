@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /*
  * Copyright (C) 2005 The Android Open Source Project
  *
@@ -561,3 +562,6 @@ int __android_log_buf_print(int bufID, int prio, const char *tag, const char *fm
 #endif
 
 #endif // _LIBS_CUTILS_LOG_H
+=======
+#include <log/log.h>
+>>>>>>> aosp/master
