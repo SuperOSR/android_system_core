@@ -433,7 +433,7 @@ static void check_fs(char *blk_device, char *fs_type, char *target)
             umount(target);
 #ifdef TARGET_BOARD_FIBER
         }else{
-            setup_ext4(blk_dev);
+            setup_ext4(blk_device);
 #endif
 		}
 
