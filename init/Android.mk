@@ -17,6 +17,11 @@ LOCAL_SRC_FILES:= \
 	ueventd_parser.c \
 	watchdogd.c
 
+ifeq ($(TARGET_BOARD_PLATFORM), fiber)
+    LOCAL_SRC_FILES += logo.c
+	LOCAL_CFLAGS += -DTARGET_BOARD_FIBER
+endif
+
 ifeq ($(strip $(INIT_BOOTCHART)),true)
 LOCAL_SRC_FILES += bootchart.c
 LOCAL_CFLAGS    += -DBOOTCHART=1

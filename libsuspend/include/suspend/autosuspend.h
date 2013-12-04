@@ -43,12 +43,10 @@ int autosuspend_enable(void);
  */
 int autosuspend_disable(void);
 
-<<<<<<< HEAD
-
+#ifdef TARGET_BOARD_FIBER
 int autosuspend_bootfast(void);
+#endif
 
-=======
->>>>>>> aosp/master
 __END_DECLS
 
 #endif

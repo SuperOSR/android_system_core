@@ -44,10 +44,7 @@
 #include <cutils/uevent.h>
 
 #include "devices.h"
-<<<<<<< HEAD
-=======
 #include "ueventd_parser.h"
->>>>>>> aosp/master
 #include "util.h"
 #include "log.h"
 
@@ -534,16 +531,11 @@ static const char *parse_device_name(struct uevent *uevent, unsigned int len)
     name++;
 
     /* too-long names would overrun our buffer */
-<<<<<<< HEAD
-    if(strlen(name) > len)
-        return NULL;
-=======
     if(strlen(name) > len) {
         ERROR("DEVPATH=%s exceeds %u-character limit on filename; ignoring event\n",
                 name, len);
         return NULL;
     }
->>>>>>> aosp/master
 
     return name;
 }
@@ -569,8 +561,6 @@ static void handle_block_device_event(struct uevent *uevent)
             uevent->major, uevent->minor, links);
 }
 
-<<<<<<< HEAD
-=======
 #define DEVPATH_LEN 96
 
 static bool assemble_devpath(char *devpath, const char *dirname,
@@ -600,44 +590,17 @@ static void mkdir_recursive_for_devpath(const char *devpath)
     mkdir_recursive(dir, 0755);
 }
 
->>>>>>> aosp/master
 static void handle_generic_device_event(struct uevent *uevent)
 {
     char *base;
     const char *name;
-<<<<<<< HEAD
-    char devpath[96] = {0};
-=======
     char devpath[DEVPATH_LEN] = {0};
->>>>>>> aosp/master
     char **links = NULL;
 
     name = parse_device_name(uevent, 64);
     if (!name)
         return;
 
-<<<<<<< HEAD
-    if (!strncmp(uevent->subsystem, "usb", 3)) {
-         if (!strcmp(uevent->subsystem, "usb")) {
-            if (uevent->device_name) {
-                /*
-                 * create device node provided by kernel if present
-                 * see drivers/base/core.c
-                 */
-                char *p = devpath;
-                snprintf(devpath, sizeof(devpath), "/dev/%s", uevent->device_name);
-                /* skip leading /dev/ */
-                p += 5;
-                /* build directories */
-                while (*p) {
-                    if (*p == '/') {
-                        *p = 0;
-                        make_dir(devpath, 0755);
-                        *p = '/';
-                    }
-                    p++;
-                }
-=======
     struct ueventd_subsystem *subsystem =
             ueventd_subsystem_find_by_name(uevent->subsystem);
 
@@ -668,7 +631,6 @@ static void handle_generic_device_event(struct uevent *uevent)
                 if (!assemble_devpath(devpath, "/dev", uevent->device_name))
                     return;
                 mkdir_recursive_for_devpath(devpath);
->>>>>>> aosp/master
              }
              else {
                  /* This imitates the file system that would be created

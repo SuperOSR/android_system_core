@@ -60,11 +60,7 @@ static void parse_line_action(struct parse_state *state, int nargs, char **args)
 #define KEYWORD(symbol, flags, nargs, func) \
     [ K_##symbol ] = { #symbol, func, nargs + 1, flags, },
 
-<<<<<<< HEAD
-struct {
-=======
 static struct {
->>>>>>> aosp/master
     const char *name;
     int (*func)(int nargs, char **args);
     unsigned char nargs;
@@ -80,11 +76,7 @@ static struct {
 #define kw_func(kw) (keyword_info[kw].func)
 #define kw_nargs(kw) (keyword_info[kw].nargs)
 
-<<<<<<< HEAD
-int lookup_keyword(const char *s)
-=======
 static int lookup_keyword(const char *s)
->>>>>>> aosp/master
 {
     switch (*s++) {
     case 'c':
@@ -109,12 +101,11 @@ static int lookup_keyword(const char *s)
         if (!strcmp(s, "xec")) return K_exec;
         if (!strcmp(s, "xport")) return K_export;
         break;
-<<<<<<< HEAD
+#ifdef TARGET_BOARD_FIBER
     case 'f':
     	if (!strcmp(s,"ormat_userdata")) return K_format_userdata;
     	break;
-=======
->>>>>>> aosp/master
+#endif
     case 'g':
         if (!strcmp(s, "roup")) return K_group;
         break;
@@ -144,11 +135,8 @@ static int lookup_keyword(const char *s)
         if (!strcmp(s, "neshot")) return K_oneshot;
         if (!strcmp(s, "nrestart")) return K_onrestart;
         break;
-<<<<<<< HEAD
-=======
     case 'p':
         if (!strcmp(s, "owerctl")) return K_powerctl;
->>>>>>> aosp/master
     case 'r':
         if (!strcmp(s, "estart")) return K_restart;
         if (!strcmp(s, "estorecon")) return K_restorecon;
@@ -169,10 +157,7 @@ static int lookup_keyword(const char *s)
         if (!strcmp(s, "ocket")) return K_socket;
         if (!strcmp(s, "tart")) return K_start;
         if (!strcmp(s, "top")) return K_stop;
-<<<<<<< HEAD
-=======
         if (!strcmp(s, "wapon_all")) return K_swapon_all;
->>>>>>> aosp/master
         if (!strcmp(s, "ymlink")) return K_symlink;
         if (!strcmp(s, "ysclktz")) return K_sysclktz;
         break;
@@ -190,11 +175,7 @@ static int lookup_keyword(const char *s)
     return K_UNKNOWN;
 }
 
-<<<<<<< HEAD
-void parse_line_no_op(struct parse_state *state, int nargs, char **args)
-=======
 static void parse_line_no_op(struct parse_state *state, int nargs, char **args)
->>>>>>> aosp/master
 {
 }
 
@@ -317,11 +298,7 @@ err:
     return -1;
 }
 
-<<<<<<< HEAD
-void parse_import(struct parse_state *state, int nargs, char **args)
-=======
 static void parse_import(struct parse_state *state, int nargs, char **args)
->>>>>>> aosp/master
 {
     struct listnode *import_list = state->priv;
     struct import *import;
@@ -346,11 +323,7 @@ static void parse_import(struct parse_state *state, int nargs, char **args)
     INFO("found import '%s', adding to import list", import->filename);
 }
 
-<<<<<<< HEAD
-void parse_new_section(struct parse_state *state, int kw,
-=======
 static void parse_new_section(struct parse_state *state, int kw,
->>>>>>> aosp/master
                        int nargs, char **args)
 {
     printf("[ %s %s ]\n", args[0],

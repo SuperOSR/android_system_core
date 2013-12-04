@@ -66,12 +66,8 @@ __BEGIN_DECLS
 #define ATRACE_TAG_APP              (1<<12)
 #define ATRACE_TAG_RESOURCES        (1<<13)
 #define ATRACE_TAG_DALVIK           (1<<14)
-<<<<<<< HEAD
-#define ATRACE_TAG_LAST             ATRACE_TAG_DALVIK
-=======
 #define ATRACE_TAG_RS               (1<<15)
 #define ATRACE_TAG_LAST             ATRACE_TAG_RS
->>>>>>> aosp/master
 
 // Reserved for initialization.
 #define ATRACE_TAG_NOT_READY        (1LL<<63)
@@ -263,8 +259,6 @@ static inline void atrace_int(uint64_t tag, const char* name, int32_t value)
     }
 }
 
-<<<<<<< HEAD
-=======
 /**
  * Traces a 64-bit integer counter value.  name is used to identify the
  * counter. This can be used to track how a value changes over time.
@@ -282,16 +276,11 @@ static inline void atrace_int64(uint64_t tag, const char* name, int64_t value)
     }
 }
 
->>>>>>> aosp/master
 #else // not HAVE_ANDROID_OS
 
 #define ATRACE_INIT()
 #define ATRACE_GET_ENABLED_TAGS()
-<<<<<<< HEAD
-#define ATRACE_ENABLED()
-=======
 #define ATRACE_ENABLED() 0
->>>>>>> aosp/master
 #define ATRACE_BEGIN(name)
 #define ATRACE_END()
 #define ATRACE_ASYNC_BEGIN(name, cookie)

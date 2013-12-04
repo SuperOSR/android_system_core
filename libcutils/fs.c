@@ -16,14 +16,11 @@
 
 #define LOG_TAG "cutils"
 
-<<<<<<< HEAD
-=======
 /* These defines are only needed because prebuilt headers are out of date */
 #define __USE_XOPEN2K8 1
 #define _ATFILE_SOURCE 1
 #define _GNU_SOURCE 1
 
->>>>>>> aosp/master
 #include <cutils/fs.h>
 #include <cutils/log.h>
 
@@ -35,10 +32,7 @@
 #include <string.h>
 #include <limits.h>
 #include <stdlib.h>
-<<<<<<< HEAD
-=======
 #include <dirent.h>
->>>>>>> aosp/master
 
 #define ALL_PERMS (S_ISUID | S_ISGID | S_ISVTX | S_IRWXU | S_IRWXG | S_IRWXO)
 #define BUF_SIZE 64
@@ -153,8 +147,6 @@ fail_closed:
     unlink(temp);
     return -1;
 }
-<<<<<<< HEAD
-=======
 
 #ifndef __APPLE__
 
@@ -243,4 +235,3 @@ done:
 }
 
 #endif
->>>>>>> aosp/master

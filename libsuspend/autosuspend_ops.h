@@ -20,14 +20,12 @@
 struct autosuspend_ops {
     int (*enable)(void);
     int (*disable)(void);
-<<<<<<< HEAD
+#ifdef TARGET_BOARD_FIBER
 	int (*bootfast)(void);
-=======
->>>>>>> aosp/master
+#endif
 };
 
 struct autosuspend_ops *autosuspend_autosleep_init(void);
 struct autosuspend_ops *autosuspend_earlysuspend_init(void);
 struct autosuspend_ops *autosuspend_wakeup_count_init(void);
-
 #endif

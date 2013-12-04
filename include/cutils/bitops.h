@@ -75,8 +75,6 @@ static inline int bitmask_ffz(unsigned int *bitmask, int num_bits)
     return -1;
 }
 
-<<<<<<< HEAD
-=======
 static inline int bitmask_weight(unsigned int *bitmask, int num_bits)
 {
     int i;
@@ -87,7 +85,6 @@ static inline int bitmask_weight(unsigned int *bitmask, int num_bits)
     return weight;
 }
 
->>>>>>> aosp/master
 static inline void bitmask_set(unsigned int *bitmask, int bit)
 {
     bitmask[BIT_WORD(bit)] |= BIT_MASK(bit);

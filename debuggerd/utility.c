@@ -22,11 +22,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <signal.h>
-<<<<<<< HEAD
-#include <cutils/logd.h>
-=======
 #include <log/logd.h>
->>>>>>> aosp/master
 #include <sys/ptrace.h>
 #include <sys/wait.h>
 #include <arpa/inet.h>

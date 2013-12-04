@@ -131,22 +131,20 @@ static int autosuspend_wakeup_count_disable(void)
     return ret;
 }
 
-<<<<<<< HEAD
+#ifdef TARGET_BOARD_FIBER
 static int autosuspend_wakeup_count_bootfast(void)
 {
 	ALOGV("not support\n");
 	return 0;
 }
+#endif
 
 struct autosuspend_ops autosuspend_wakeup_count_ops = {
         .enable = autosuspend_wakeup_count_enable,
         .disable = autosuspend_wakeup_count_disable,
-		.bootfast = autosuspend_wakeup_count_bootfast,
-=======
-struct autosuspend_ops autosuspend_wakeup_count_ops = {
-        .enable = autosuspend_wakeup_count_enable,
-        .disable = autosuspend_wakeup_count_disable,
->>>>>>> aosp/master
+#ifdef TARGET_BOARD_FIBER
+        .bootfast = autosuspend_wakeup_count_bootfast,
+#endif
 };
 
 struct autosuspend_ops *autosuspend_wakeup_count_init(void)

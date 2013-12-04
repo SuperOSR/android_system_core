@@ -14,13 +14,6 @@
  * limitations under the License.
  */
 
-<<<<<<< HEAD
-#include <stdio.h>
-#include <unistd.h>
-#include <stdarg.h>
-#include <string.h>
-
-=======
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
@@ -30,16 +23,11 @@
 #include <string.h>
 
 #include "ueventd.h"
->>>>>>> aosp/master
 #include "ueventd_parser.h"
 #include "parser.h"
 #include "log.h"
 #include "util.h"
 
-<<<<<<< HEAD
-static void parse_line_device(struct parse_state *state, int nargs, char **args);
-
-=======
 static list_declare(subsystem_list);
 
 static void parse_line_device(struct parse_state *state, int nargs, char **args);
@@ -209,7 +197,6 @@ static void parse_line(struct parse_state *state, char **args, int nargs)
     }
 }
 
->>>>>>> aosp/master
 static void parse_config(const char *fn, char *s)
 {
     struct parse_state state;
@@ -220,24 +207,11 @@ static void parse_config(const char *fn, char *s)
     state.line = 1;
     state.ptr = s;
     state.nexttoken = 0;
-<<<<<<< HEAD
-    state.parse_line = parse_line_device;
-=======
     state.parse_line = parse_line_no_op;
->>>>>>> aosp/master
     for (;;) {
         int token = next_token(&state);
         switch (token) {
         case T_EOF:
-<<<<<<< HEAD
-            state.parse_line(&state, 0, 0);
-            return;
-        case T_NEWLINE:
-            if (nargs) {
-                state.parse_line(&state, nargs, args);
-                nargs = 0;
-            }
-=======
             parse_line(&state, args, nargs);
             return;
         case T_NEWLINE:
@@ -246,7 +220,6 @@ static void parse_config(const char *fn, char *s)
                 nargs = 0;
             }
             state.line++;
->>>>>>> aosp/master
             break;
         case T_TEXT:
             if (nargs < UEVENTD_PARSER_MAXARGS) {
@@ -268,12 +241,8 @@ int ueventd_parse_config_file(const char *fn)
     return 0;
 }
 
-<<<<<<< HEAD
-static void parse_line_device(struct parse_state* state, int nargs, char **args)
-=======
 static void parse_line_device(struct parse_state *state __attribute__((unused)),
         int nargs, char **args)
->>>>>>> aosp/master
 {
     set_device_permission(nargs, args);
 }

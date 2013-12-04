@@ -29,11 +29,7 @@
 
 #include <private/android_filesystem_config.h>
 
-<<<<<<< HEAD
-#include <cutils/logger.h>
-=======
 #include <log/logger.h>
->>>>>>> aosp/master
 #include <cutils/properties.h>
 
 #include <backtrace/backtrace.h>

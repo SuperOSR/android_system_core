@@ -32,10 +32,7 @@
 #include <sys/wait.h>
 #include <linux/loop.h>
 #include <cutils/partition_utils.h>
-<<<<<<< HEAD
-=======
 #include <cutils/android_reboot.h>
->>>>>>> aosp/master
 #include <sys/system_properties.h>
 #include <fs_mgr.h>
 
@@ -60,11 +57,7 @@ static int write_file(const char *path, const char *value)
 {
     int fd, ret, len;
 
-<<<<<<< HEAD
-    fd = open(path, O_WRONLY|O_CREAT, 0622);
-=======
     fd = open(path, O_WRONLY|O_CREAT|O_NOFOLLOW, 0600);
->>>>>>> aosp/master
 
     if (fd < 0)
         return -errno;
@@ -256,7 +249,7 @@ int do_export(int nargs, char **args)
     return 0;
 }
 
-<<<<<<< HEAD
+#ifdef TARGET_BOARD_FIBER
 int do_format_userdata(int argc, char **argv)
 {
 	const char *devicePath = argv[1];
@@ -295,9 +288,8 @@ int do_format_userdata(int argc, char **argv)
    		return 1;
 	}
 }
+#endif
 
-=======
->>>>>>> aosp/master
 int do_hostname(int nargs, char **args)
 {
     return write_file("/proc/sys/kernel/hostname", args[1]);
@@ -565,8 +557,6 @@ int do_mount_all(int nargs, char **args)
     return ret;
 }
 
-<<<<<<< HEAD
-=======
 int do_swapon_all(int nargs, char **args)
 {
     struct fstab *fstab;
@@ -579,7 +569,6 @@ int do_swapon_all(int nargs, char **args)
     return ret;
 }
 
->>>>>>> aosp/master
 int do_setcon(int nargs, char **args) {
     if (is_selinux_enabled() <= 0)
         return 0;
@@ -663,8 +652,6 @@ int do_restart(int nargs, char **args)
     return 0;
 }
 
-<<<<<<< HEAD
-=======
 int do_powerctl(int nargs, char **args)
 {
     char command[PROP_VALUE_MAX];
@@ -702,7 +689,6 @@ int do_powerctl(int nargs, char **args)
     return android_reboot(cmd, 0, reboot_target);
 }
 
->>>>>>> aosp/master
 int do_trigger(int nargs, char **args)
 {
     action_for_each_trigger(args[1], action_add_queue_tail);

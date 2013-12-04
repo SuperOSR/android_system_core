@@ -69,8 +69,6 @@
 #define MF_VOLDMANAGED  0x10
 #define MF_LENGTH       0x20
 #define MF_RECOVERYONLY 0x40
-<<<<<<< HEAD
-=======
 #define MF_SWAPPRIO     0x80
 #define MF_ZRAMSIZE     0x100
 #define MF_VERIFY       0x200
@@ -82,7 +80,6 @@
 #define MF_NOEMULATEDSD 0x400
 
 #define DM_BUF_SIZE 4096
->>>>>>> aosp/master
 
 #endif /* __CORE_FS_MGR_PRIV_H */
 

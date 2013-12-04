@@ -57,9 +57,6 @@ static int wait_for_one_process(int block)
 
     svc = service_find_by_pid(pid);
     if (!svc) {
-<<<<<<< HEAD
-        ERROR("untracked pid %d exited\n", pid);
-=======
         if (WIFEXITED(status)) {
             ERROR("untracked pid %d exited with status %d\n", pid, WEXITSTATUS(status));
         } else if (WIFSIGNALED(status)) {
@@ -69,7 +66,6 @@ static int wait_for_one_process(int block)
         } else {
             ERROR("untracked pid %d state changed\n", pid);
         }
->>>>>>> aosp/master
         return 0;
     }
 

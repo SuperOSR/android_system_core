@@ -27,9 +27,6 @@
 #include <sys/wait.h>
 #include <libgen.h>
 #include <time.h>
-<<<<<<< HEAD
-
-=======
 #include <sys/swap.h>
 /* XXX These need to be obtained from kernel headers. See b/9336527 */
 #define SWAP_FLAG_PREFER        0x8000
@@ -38,35 +35,27 @@
 #define SWAP_FLAG_DISCARD       0x10000
 
 #include <linux/loop.h>
->>>>>>> aosp/master
 #include <private/android_filesystem_config.h>
 #include <cutils/partition_utils.h>
 #include <cutils/properties.h>
 #include <logwrap/logwrap.h>
 
-<<<<<<< HEAD
-#include "fs_mgr_priv.h"
-=======
 #include "mincrypt/rsa.h"
 #include "mincrypt/sha.h"
 #include "mincrypt/sha256.h"
 
 #include "fs_mgr_priv.h"
 #include "fs_mgr_priv_verity.h"
->>>>>>> aosp/master
 
 #define KEY_LOC_PROP   "ro.crypto.keyfile.userdata"
 #define KEY_IN_FOOTER  "footer"
 
 #define E2FSCK_BIN      "/system/bin/e2fsck"
-<<<<<<< HEAD
-=======
 #define MKSWAP_BIN      "/system/bin/mkswap"
 
 #define FSCK_LOG_FILE   "/dev/fscklogs/log"
 
 #define ZRAM_CONF_DEV   "/sys/block/zram0/disksize"
->>>>>>> aosp/master
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(*(a)))
 
@@ -102,19 +91,14 @@ static struct flag_list fs_mgr_flags[] = {
     { "voldmanaged=",MF_VOLDMANAGED},
     { "length=",     MF_LENGTH },
     { "recoveryonly",MF_RECOVERYONLY },
-<<<<<<< HEAD
-=======
     { "swapprio=",   MF_SWAPPRIO },
     { "zramsize=",   MF_ZRAMSIZE },
     { "verify",      MF_VERIFY },
     { "noemulatedsd", MF_NOEMULATEDSD },
->>>>>>> aosp/master
     { "defaults",    0 },
     { 0,             0 },
 };
 
-<<<<<<< HEAD
-=======
 struct fs_mgr_flag_values {
     char *key_loc;
     long long part_length;
@@ -124,7 +108,6 @@ struct fs_mgr_flag_values {
     unsigned int zram_size;
 };
 
->>>>>>> aosp/master
 /*
  * gettime() - returns the time in seconds of the system's monotonic clock or
  * zero on error.
@@ -156,11 +139,7 @@ static int wait_for_file(const char *filename, int timeout)
 }
 
 static int parse_flags(char *flags, struct flag_list *fl,
-<<<<<<< HEAD
-                       char **key_loc, long long *part_length, char **label, int *partnum,
-=======
                        struct fs_mgr_flag_values *flag_vals,
->>>>>>> aosp/master
                        char *fs_options, int fs_options_len)
 {
     int f = 0;
@@ -168,30 +147,12 @@ static int parse_flags(char *flags, struct flag_list *fl,
     char *p;
     char *savep;
 
-<<<<<<< HEAD
-    /* initialize key_loc to null, if we find an MF_CRYPT flag,
-     * then we'll set key_loc to the proper value */
-    if (key_loc) {
-        *key_loc = NULL;
-    }
-    /* initialize part_length to 0, if we find an MF_LENGTH flag,
-     * then we'll set part_length to the proper value */
-    if (part_length) {
-        *part_length = 0;
-    }
-    if (partnum) {
-        *partnum = -1;
-    }
-    if (label) {
-        *label = NULL;
-=======
     /* initialize flag values.  If we find a relevant flag, we'll
      * update the value */
     if (flag_vals) {
         memset(flag_vals, 0, sizeof(*flag_vals));
         flag_vals->partnum = -1;
         flag_vals->swap_prio = -1; /* negative means it wasn't specified. */
->>>>>>> aosp/master
     }
 
     /* initialize fs_options to the null string */
@@ -207,19 +168,6 @@ static int parse_flags(char *flags, struct flag_list *fl,
         for (i = 0; fl[i].name; i++) {
             if (!strncmp(p, fl[i].name, strlen(fl[i].name))) {
                 f |= fl[i].flag;
-<<<<<<< HEAD
-                if ((fl[i].flag == MF_CRYPT) && key_loc) {
-                    /* The encryptable flag is followed by an = and the
-                     * location of the keys.  Get it and return it.
-                     */
-                    *key_loc = strdup(strchr(p, '=') + 1);
-                } else if ((fl[i].flag == MF_LENGTH) && part_length) {
-                    /* The length flag is followed by an = and the
-                     * size of the partition.  Get it and return it.
-                     */
-                    *part_length = strtoll(strchr(p, '=') + 1, NULL, 0);
-                } else if ((fl[i].flag == MF_VOLDMANAGED) && label && partnum) {
-=======
                 if ((fl[i].flag == MF_CRYPT) && flag_vals) {
                     /* The encryptable flag is followed by an = and the
                      * location of the keys.  Get it and return it.
@@ -231,7 +179,6 @@ static int parse_flags(char *flags, struct flag_list *fl,
                      */
                     flag_vals->part_length = strtoll(strchr(p, '=') + 1, NULL, 0);
                 } else if ((fl[i].flag == MF_VOLDMANAGED) && flag_vals) {
->>>>>>> aosp/master
                     /* The voldmanaged flag is followed by an = and the
                      * label, a colon and the partition number or the
                      * word "auto", e.g.
@@ -245,15 +192,6 @@ static int parse_flags(char *flags, struct flag_list *fl,
                     label_start = strchr(p, '=') + 1;
                     label_end = strchr(p, ':');
                     if (label_end) {
-<<<<<<< HEAD
-                        *label = strndup(label_start,
-                                         (int) (label_end - label_start));
-                        part_start = strchr(p, ':') + 1;
-                        if (!strcmp(part_start, "auto")) {
-                            *partnum = -1;
-                        } else {
-                            *partnum = strtol(part_start, NULL, 0);
-=======
                         flag_vals->label = strndup(label_start,
                                                    (int) (label_end - label_start));
                         part_start = strchr(p, ':') + 1;
@@ -261,18 +199,14 @@ static int parse_flags(char *flags, struct flag_list *fl,
                             flag_vals->partnum = -1;
                         } else {
                             flag_vals->partnum = strtol(part_start, NULL, 0);
->>>>>>> aosp/master
                         }
                     } else {
                         ERROR("Warning: voldmanaged= flag malformed\n");
                     }
-<<<<<<< HEAD
-=======
                 } else if ((fl[i].flag == MF_SWAPPRIO) && flag_vals) {
                     flag_vals->swap_prio = strtoll(strchr(p, '=') + 1, NULL, 0);
                 } else if ((fl[i].flag == MF_ZRAMSIZE) && flag_vals) {
                     flag_vals->zram_size = strtoll(strchr(p, '=') + 1, NULL, 0);
->>>>>>> aosp/master
                 }
                 break;
             }
@@ -315,14 +249,7 @@ struct fstab *fs_mgr_read_fstab(const char *fstab_path)
     char *save_ptr, *p;
     struct fstab *fstab = NULL;
     struct fstab_rec *recs;
-<<<<<<< HEAD
-    char *key_loc;
-    long long part_length;
-    char *label;
-    int partnum;
-=======
     struct fs_mgr_flag_values flag_vals;
->>>>>>> aosp/master
 #define FS_OPTIONS_LEN 1024
     char tmp_fs_options[FS_OPTIONS_LEN];
 
@@ -410,12 +337,7 @@ struct fstab *fs_mgr_read_fstab(const char *fstab_path)
             goto err;
         }
         tmp_fs_options[0] = '\0';
-<<<<<<< HEAD
-        fstab->recs[cnt].flags = parse_flags(p, mount_flags,
-                                       NULL, NULL, NULL, NULL,
-=======
         fstab->recs[cnt].flags = parse_flags(p, mount_flags, NULL,
->>>>>>> aosp/master
                                        tmp_fs_options, FS_OPTIONS_LEN);
 
         /* fs_options are optional */
@@ -430,15 +352,6 @@ struct fstab *fs_mgr_read_fstab(const char *fstab_path)
             goto err;
         }
         fstab->recs[cnt].fs_mgr_flags = parse_flags(p, fs_mgr_flags,
-<<<<<<< HEAD
-                                              &key_loc, &part_length,
-                                              &label, &partnum,
-                                              NULL, 0);
-        fstab->recs[cnt].key_loc = key_loc;
-        fstab->recs[cnt].length = part_length;
-        fstab->recs[cnt].label = label;
-        fstab->recs[cnt].partnum = partnum;
-=======
                                                     &flag_vals, NULL, 0);
         fstab->recs[cnt].key_loc = flag_vals.key_loc;
         fstab->recs[cnt].length = flag_vals.part_length;
@@ -446,7 +359,6 @@ struct fstab *fs_mgr_read_fstab(const char *fstab_path)
         fstab->recs[cnt].partnum = flag_vals.partnum;
         fstab->recs[cnt].swap_prio = flag_vals.swap_prio;
         fstab->recs[cnt].zram_size = flag_vals.zram_size;
->>>>>>> aosp/master
         cnt++;
     }
     fclose(fstab_file);
@@ -465,13 +377,10 @@ void fs_mgr_free_fstab(struct fstab *fstab)
 {
     int i;
 
-<<<<<<< HEAD
-=======
     if (!fstab) {
         return;
     }
 
->>>>>>> aosp/master
     for (i = 0; i < fstab->num_entries; i++) {
         /* Free the pointers return by strdup(3) */
         free(fstab->recs[i].blk_device);
@@ -522,17 +431,17 @@ static void check_fs(char *blk_device, char *fs_type, char *target)
         ret = mount(blk_device, target, fs_type, tmpmnt_flags, tmpmnt_opts);
         if (!ret) {
             umount(target);
-        }
+#ifdef TARGET_BOARD_FIBER
+        }else{
+            setup_ext4(blk_dev);
+#endif
+		}
 
         INFO("Running %s on %s\n", E2FSCK_BIN, blk_device);
 
         ret = android_fork_execvp_ext(ARRAY_SIZE(e2fsck_argv), e2fsck_argv,
-<<<<<<< HEAD
-                                      &status, true, LOG_KLOG, true);
-=======
                                       &status, true, LOG_KLOG | LOG_FILE,
                                       true, FSCK_LOG_FILE);
->>>>>>> aosp/master
 
         if (ret < 0) {
             /* No need to check for error in fork, we can't really handle it now */
@@ -542,6 +451,71 @@ static void check_fs(char *blk_device, char *fs_type, char *target)
 
     return;
 }
+
+#ifdef TARGET_BOARD_FIBER
+/* setupfs, format a device to ext4 */
+const char *mkext4fs = "/system/bin/mke2fs.ext4";
+
+int setup_ext4(const char *blockdev)
+{
+    char buf[256], path[128];
+    pid_t child;
+    int status, n;
+
+	/* we might be looking at an indirect reference */
+    n = readlink(blockdev, path, sizeof(path) - 1);	
+	//weng: fix the readlink error!
+	if (n < 0) {
+		fprintf(stderr, "readlink err: %d\n", errno);
+		n = strlen(blockdev);	
+		strcpy(path, blockdev);
+	}
+	
+    if (n > 0) {
+        path[n] = 0;
+        if (!memcmp(path, "/dev/block/", 11))
+            blockdev = path + 11;
+    }
+	
+
+    if (strchr(blockdev,'/')) {
+        fprintf(stderr,"not a block device name: %s\n", blockdev);
+        return 0;
+    }
+    
+    sprintf(buf,"/sys/fs/ext4/%s", blockdev);
+    if (access(buf, F_OK) == 0) {
+        fprintf(stderr,"device %s already has a filesystem\n", blockdev);
+        return 0;
+    }
+    sprintf(buf,"/dev/block/%s", blockdev);
+
+    fprintf(stderr,"+++\n");
+    
+tryagain:
+	ERROR("begin to format ext4 buffer : %s  ", buf);
+    child = fork();
+    if (child < 0) {
+        fprintf(stderr,"error: fork failed\n");
+        return 0;
+    }
+    if (child == 0) {
+        execl(mkext4fs, mkext4fs, buf, NULL);        
+    }else{    	
+		waitpid(child, &status, 0);
+		ERROR("finish format to ext4 :%s",buf);
+		if (WEXITSTATUS(status) != 0) {
+			ERROR("exec: pid %1d exited with return code %d: %s", (int)child, WEXITSTATUS(status), strerror(status));
+			sleep(3);
+			goto tryagain;
+		}
+    }
+	
+    //while (waitpid(-1, &status, 0) != child) ;
+
+    return 1;
+}
+#endif
 
 static void remove_trailing_slashes(char *n)
 {
@@ -554,8 +528,6 @@ static void remove_trailing_slashes(char *n)
     }
 }
 
-<<<<<<< HEAD
-=======
 /*
  * Mark the given block device as read-only, using the BLKROSET ioctl.
  * Return 0 on success, and -1 on error.
@@ -593,7 +565,6 @@ static int __mount(const char *source, const char *target,
     return ret;
 }
 
->>>>>>> aosp/master
 static int fs_match(char *in1, char *in2)
 {
     char *n1;
@@ -631,14 +602,9 @@ int fs_mgr_mount_all(struct fstab *fstab)
             continue;
         }
 
-<<<<<<< HEAD
-        /* Skip raw partition entries such as boot, recovery, etc */
-        if (!strcmp(fstab->recs[i].fs_type, "emmc") ||
-=======
         /* Skip swap and raw partition entries such as boot, recovery, etc */
         if (!strcmp(fstab->recs[i].fs_type, "swap") ||
             !strcmp(fstab->recs[i].fs_type, "emmc") ||
->>>>>>> aosp/master
             !strcmp(fstab->recs[i].fs_type, "mtd")) {
             continue;
         }
@@ -652,11 +618,6 @@ int fs_mgr_mount_all(struct fstab *fstab)
                      fstab->recs[i].mount_point);
         }
 
-<<<<<<< HEAD
-        mret = mount(fstab->recs[i].blk_device, fstab->recs[i].mount_point,
-                     fstab->recs[i].fs_type, fstab->recs[i].flags,
-                     fstab->recs[i].fs_options);
-=======
         if (fstab->recs[i].fs_mgr_flags & MF_VERIFY) {
             if (fs_mgr_setup_verity(&fstab->recs[i]) < 0) {
                 ERROR("Could not set up verified partition, skipping!");
@@ -668,7 +629,6 @@ int fs_mgr_mount_all(struct fstab *fstab)
                      fstab->recs[i].fs_type, fstab->recs[i].flags,
                      fstab->recs[i].fs_options);
 
->>>>>>> aosp/master
         if (!mret) {
             /* Success!  Go get the next one */
             continue;
@@ -724,14 +684,9 @@ int fs_mgr_do_mount(struct fstab *fstab, char *n_name, char *n_blk_device,
         }
 
         /* We found our match */
-<<<<<<< HEAD
-        /* If this is a raw partition, report an error */
-        if (!strcmp(fstab->recs[i].fs_type, "emmc") ||
-=======
         /* If this swap or a raw partition, report an error */
         if (!strcmp(fstab->recs[i].fs_type, "swap") ||
             !strcmp(fstab->recs[i].fs_type, "emmc") ||
->>>>>>> aosp/master
             !strcmp(fstab->recs[i].fs_type, "mtd")) {
             ERROR("Cannot mount filesystem of type %s on %s\n",
                   fstab->recs[i].fs_type, n_blk_device);
@@ -748,8 +703,6 @@ int fs_mgr_do_mount(struct fstab *fstab, char *n_name, char *n_blk_device,
                      fstab->recs[i].mount_point);
         }
 
-<<<<<<< HEAD
-=======
         if (fstab->recs[i].fs_mgr_flags & MF_VERIFY) {
             if (fs_mgr_setup_verity(&fstab->recs[i]) < 0) {
                 ERROR("Could not set up verified partition, skipping!");
@@ -757,20 +710,14 @@ int fs_mgr_do_mount(struct fstab *fstab, char *n_name, char *n_blk_device,
             }
         }
 
->>>>>>> aosp/master
         /* Now mount it where requested */
         if (tmp_mount_point) {
             m = tmp_mount_point;
         } else {
             m = fstab->recs[i].mount_point;
         }
-<<<<<<< HEAD
-        if (mount(n_blk_device, m, fstab->recs[i].fs_type,
-                  fstab->recs[i].flags, fstab->recs[i].fs_options)) {
-=======
         if (__mount(n_blk_device, m, fstab->recs[i].fs_type,
                     fstab->recs[i].flags, fstab->recs[i].fs_options)) {
->>>>>>> aosp/master
             ERROR("Cannot mount filesystem on %s at %s\n",
                     n_blk_device, m);
             goto out;
@@ -825,8 +772,6 @@ int fs_mgr_unmount_all(struct fstab *fstab)
 
     return ret;
 }
-<<<<<<< HEAD
-=======
 
 /* This must be called after mount_all, because the mkswap command needs to be
  * available.
@@ -904,7 +849,6 @@ int fs_mgr_swapon_all(struct fstab *fstab)
     return ret;
 }
 
->>>>>>> aosp/master
 /*
  * key_loc must be at least PROPERTY_VALUE_MAX bytes long
  *
@@ -1011,10 +955,7 @@ int fs_mgr_is_encryptable(struct fstab_rec *fstab)
     return fstab->fs_mgr_flags & MF_CRYPT;
 }
 
-<<<<<<< HEAD
-=======
 int fs_mgr_is_noemulatedsd(struct fstab_rec *fstab)
 {
     return fstab->fs_mgr_flags & MF_NOEMULATEDSD;
 }
->>>>>>> aosp/master

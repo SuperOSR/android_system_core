@@ -6,10 +6,6 @@
 #ifndef ADB_MUTEX
 #error ADB_MUTEX not defined when including this file
 #endif
-<<<<<<< HEAD
-ADB_MUTEX(dns_lock)
-=======
->>>>>>> aosp/master
 ADB_MUTEX(socket_list_lock)
 ADB_MUTEX(transport_lock)
 #if ADB_HOST

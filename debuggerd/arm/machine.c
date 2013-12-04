@@ -15,20 +15,6 @@
 ** limitations under the License.
 */
 
-<<<<<<< HEAD
-#include <stddef.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/ptrace.h>
-
-#include <corkscrew/ptrace.h>
-
-#include <linux/user.h>
-=======
 #include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -38,7 +24,6 @@
 #include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/user.h>
->>>>>>> aosp/master
 
 #include "../utility.h"
 #include "../machine.h"

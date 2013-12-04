@@ -174,10 +174,6 @@ bool NetlinkEvent::parseIfAddrMessage(int type, struct ifaddrmsg *ifaddr,
 }
 
 /*
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> aosp/master
  * Parse a RTM_NEWNDUSEROPT message.
  */
 bool NetlinkEvent::parseNdUserOptMessage(struct nduseroptmsg *msg, int len) {

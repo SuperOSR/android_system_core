@@ -42,10 +42,7 @@
 #include <cutils/android_reboot.h>
 #include <cutils/sockets.h>
 #include <cutils/iosched_policy.h>
-<<<<<<< HEAD
-=======
 #include <cutils/fs.h>
->>>>>>> aosp/master
 #include <private/android_filesystem_config.h>
 #include <termios.h>
 
@@ -560,8 +557,6 @@ static int wait_for_coldboot_done_action(int nargs, char **args)
     return ret;
 }
 
-<<<<<<< HEAD
-=======
 /*
  * Writes 512 bytes of output from Hardware RNG (/dev/hw_random, backed
  * by Linux kernel's hw_random framework) into Linux RNG's via /dev/urandom.
@@ -640,7 +635,6 @@ ret:
     return result;
 }
 
->>>>>>> aosp/master
 static int keychord_init_action(int nargs, char **args)
 {
     keychord_init();
@@ -660,6 +654,9 @@ static int console_init_action(int nargs, char **args)
         have_console = 1;
     close(fd);
 
+#ifdef TARGET_BOARD_FIBER
+    load_argb8888_image(INIT_IMAGE_FILE);
+#endif
     fd = open("/dev/tty0", O_WRONLY);
     if (fd >= 0) {
         const char *msg;
@@ -1043,13 +1040,8 @@ int main(int argc, char **argv)
     action_for_each_trigger("early-init", action_add_queue_tail);
 
     queue_builtin_action(wait_for_coldboot_done_action, "wait_for_coldboot_done");
-<<<<<<< HEAD
-    queue_builtin_action(keychord_init_action, "keychord_init");
-=======
     queue_builtin_action(mix_hwrng_into_linux_rng_action, "mix_hwrng_into_linux_rng");
     queue_builtin_action(keychord_init_action, "keychord_init");
-    queue_builtin_action(console_init_action, "console_init");
->>>>>>> aosp/master
 
     /* execute all the boot actions to get us started */
     action_for_each_trigger("init", action_add_queue_tail);
@@ -1057,23 +1049,17 @@ int main(int argc, char **argv)
     /* skip mounting filesystems in charger mode */
     if (!is_charger) {
         action_for_each_trigger("early-fs", action_add_queue_tail);
-<<<<<<< HEAD
         queue_builtin_action(console_init_action, "console_init");
-=======
->>>>>>> aosp/master
         action_for_each_trigger("fs", action_add_queue_tail);
         action_for_each_trigger("post-fs", action_add_queue_tail);
         action_for_each_trigger("post-fs-data", action_add_queue_tail);
     }
 
-<<<<<<< HEAD
-=======
     /* Repeat mix_hwrng_into_linux_rng in case /dev/hw_random or /dev/random
      * wasn't ready immediately after wait_for_coldboot_done
      */
     queue_builtin_action(mix_hwrng_into_linux_rng_action, "mix_hwrng_into_linux_rng");
 
->>>>>>> aosp/master
     queue_builtin_action(property_service_init_action, "property_service_init");
     queue_builtin_action(signal_init_action, "signal_init");
     queue_builtin_action(check_startup_action, "check_startup");

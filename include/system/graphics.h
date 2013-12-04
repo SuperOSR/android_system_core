@@ -42,8 +42,6 @@ extern "C" {
  */
 
 enum {
-<<<<<<< HEAD
-=======
     /*
      * "linear" color pixel formats:
      *
@@ -51,18 +49,11 @@ enum {
      * as linear formats, i.e.: no special operation is performed when
      * reading or writing into a buffer in one of these formats
      */
->>>>>>> aosp/master
     HAL_PIXEL_FORMAT_RGBA_8888          = 1,
     HAL_PIXEL_FORMAT_RGBX_8888          = 2,
     HAL_PIXEL_FORMAT_RGB_888            = 3,
     HAL_PIXEL_FORMAT_RGB_565            = 4,
     HAL_PIXEL_FORMAT_BGRA_8888          = 5,
-<<<<<<< HEAD
-    HAL_PIXEL_FORMAT_RGBA_5551          = 6,
-    HAL_PIXEL_FORMAT_RGBA_4444          = 7,
-
-    /* 0x8 - 0xFF range unavailable */
-=======
 
     /*
      * sRGB color pixel formats:
@@ -85,7 +76,6 @@ enum {
      */
     HAL_PIXEL_FORMAT_sRGB_A_8888        = 0xC,
     HAL_PIXEL_FORMAT_sRGB_X_8888        = 0xD,
->>>>>>> aosp/master
 
     /*
      * 0x100 - 0x1FF
@@ -303,11 +293,8 @@ enum {
     HAL_TRANSFORM_ROT_180   = 0x03,
     /* rotate source image 270 degrees clockwise */
     HAL_TRANSFORM_ROT_270   = 0x07,
-<<<<<<< HEAD
-=======
     /* don't use. see system/window.h */
     HAL_TRANSFORM_RESERVED  = 0x08,
->>>>>>> aosp/master
 };
 
 #ifdef __cplusplus

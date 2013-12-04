@@ -17,13 +17,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <cutils/process_name.h>
-<<<<<<< HEAD
-#include <cutils/properties.h>
-=======
 #ifdef HAVE_ANDROID_OS
 #include <cutils/properties.h>
 #endif
->>>>>>> aosp/master
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -39,13 +35,9 @@ static const char* process_name = "unknown";
 static int running_in_emulator = -1;
 
 void set_process_name(const char* new_name) {
-<<<<<<< HEAD
-    char  propBuf[PROPERTY_VALUE_MAX];
-=======
 #ifdef HAVE_ANDROID_OS
     char  propBuf[PROPERTY_VALUE_MAX];
 #endif
->>>>>>> aosp/master
 
     if (new_name == NULL) {
         return;
@@ -65,10 +57,7 @@ void set_process_name(const char* new_name) {
     }
 #endif
 
-<<<<<<< HEAD
-=======
 #ifdef HAVE_ANDROID_OS
->>>>>>> aosp/master
     // If we know we are not running in the emulator, then return.
     if (running_in_emulator == 0) {
         return;
@@ -98,10 +87,7 @@ void set_process_name(const char* new_name) {
         return;
     write(fd, process_name, strlen(process_name) + 1);
     close(fd);
-<<<<<<< HEAD
-=======
 #endif
->>>>>>> aosp/master
 }
 
 const char* get_process_name(void) {

@@ -230,9 +230,6 @@ enum {
      * Boolean that indicates whether the consumer is running more than
      * one buffer behind the producer.
      */
-<<<<<<< HEAD
-    NATIVE_WINDOW_CONSUMER_RUNNING_BEHIND = 9
-=======
     NATIVE_WINDOW_CONSUMER_RUNNING_BEHIND = 9,
 
     /*
@@ -240,7 +237,6 @@ enum {
      * The values are defined in hardware/libhardware/include/gralloc.h.
      */
     NATIVE_WINDOW_CONSUMER_USAGE_BITS = 10
->>>>>>> aosp/master
 };
 
 /* Valid operations for the (*perform)() hook.
@@ -300,22 +296,15 @@ enum {
     NATIVE_WINDOW_TRANSFORM_FLIP_H = HAL_TRANSFORM_FLIP_H ,
     /* flip source image vertically */
     NATIVE_WINDOW_TRANSFORM_FLIP_V = HAL_TRANSFORM_FLIP_V,
-<<<<<<< HEAD
-    /* rotate source image 90 degrees clock-wise */
-=======
     /* rotate source image 90 degrees clock-wise, and is applied after TRANSFORM_FLIP_{H|V} */
->>>>>>> aosp/master
     NATIVE_WINDOW_TRANSFORM_ROT_90 = HAL_TRANSFORM_ROT_90,
     /* rotate source image 180 degrees */
     NATIVE_WINDOW_TRANSFORM_ROT_180 = HAL_TRANSFORM_ROT_180,
     /* rotate source image 270 degrees clock-wise */
     NATIVE_WINDOW_TRANSFORM_ROT_270 = HAL_TRANSFORM_ROT_270,
-<<<<<<< HEAD
-=======
     /* transforms source by the inverse transform of the screen it is displayed onto. This
      * transform is applied last */
     NATIVE_WINDOW_TRANSFORM_INVERSE_DISPLAY = 0x08
->>>>>>> aosp/master
 };
 
 /* parameter for NATIVE_WINDOW_SET_SCALING_MODE */
@@ -341,10 +330,6 @@ enum {
 enum {
     NATIVE_WINDOW_FRAMEBUFFER               = 0, /* FramebufferNativeWindow */
     NATIVE_WINDOW_SURFACE                   = 1, /* Surface */
-<<<<<<< HEAD
-    NATIVE_WINDOW_SURFACE_TEXTURE_CLIENT    = 2, /* SurfaceTextureClient */
-=======
->>>>>>> aosp/master
 };
 
 /* parameter for NATIVE_WINDOW_SET_BUFFERS_TIMESTAMP

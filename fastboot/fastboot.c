@@ -42,10 +42,7 @@
 
 #include <sys/time.h>
 #include <sys/types.h>
-<<<<<<< HEAD
-=======
 #include <sys/stat.h>
->>>>>>> aosp/master
 
 #include <bootimg.h>
 #include <sparse/sparse.h>
@@ -57,11 +54,8 @@
 #define O_BINARY 0
 #endif
 
-<<<<<<< HEAD
-=======
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof(*(a)))
 
->>>>>>> aosp/master
 char cur_product[FB_RESPONSE_SZ + 1];
 
 void bootimg_set_cmdline(boot_img_hdr *h, const char *cmdline);
@@ -89,8 +83,6 @@ unsigned ramdisk_offset = 0x01000000;
 unsigned second_offset  = 0x00f00000;
 unsigned tags_offset    = 0x00000100;
 
-<<<<<<< HEAD
-=======
 enum fb_buffer_type {
     FB_BUFFER,
     FB_BUFFER_SPARSE,
@@ -112,7 +104,6 @@ static struct {
     {"recovery.img", "recovery.sig", "recovery", true},
     {"system.img", "system.sig", "system", false},
 };
->>>>>>> aosp/master
 
 void get_my_path(char *path);
 
@@ -156,46 +147,6 @@ char *find_item(const char *item, const char *product)
     return strdup(path);
 }
 
-<<<<<<< HEAD
-#ifdef _WIN32
-void *load_file(const char *fn, unsigned *_sz);
-int64_t file_size(const char *fn);
-#else
-#if defined(__APPLE__) && defined(__MACH__)
-#define lseek64 lseek
-#define off64_t off_t
-#endif
-
-int64_t file_size(const char *fn)
-{
-    off64_t off;
-    int fd;
-
-    fd = open(fn, O_RDONLY);
-    if (fd < 0) return -1;
-
-    off = lseek64(fd, 0, SEEK_END);
-    close(fd);
-
-    return off;
-}
-
-void *load_file(const char *fn, unsigned *_sz)
-{
-    char *data;
-    int sz;
-    int fd;
-    int errno_tmp;
-
-    data = 0;
-    fd = open(fn, O_RDONLY);
-    if(fd < 0) return 0;
-
-    sz = lseek(fd, 0, SEEK_END);
-    if(sz < 0) goto oops;
-
-    if(lseek(fd, 0, SEEK_SET) != 0) goto oops;
-=======
 static int64_t file_size(int fd)
 {
     struct stat st;
@@ -218,7 +169,6 @@ static void *load_fd(int fd, unsigned *_sz)
     if (sz < 0) {
         goto oops;
     }
->>>>>>> aosp/master
 
     data = (char*) malloc(sz);
     if(data == 0) goto oops;
@@ -236,9 +186,6 @@ oops:
     errno = errno_tmp;
     return 0;
 }
-<<<<<<< HEAD
-#endif
-=======
 
 static void *load_file(const char *fn, unsigned *_sz)
 {
@@ -249,7 +196,6 @@ static void *load_file(const char *fn, unsigned *_sz)
 
     return load_fd(fd, _sz);
 }
->>>>>>> aosp/master
 
 int match_fastboot_with_serial(usb_ifc_info *info, const char *local_serial)
 {
@@ -456,8 +402,6 @@ void *unzip_file(zipfile_t zip, const char *name, unsigned *sz)
     return data;
 }
 
-<<<<<<< HEAD
-=======
 static int unzip_to_file(zipfile_t zip, char *name)
 {
     int fd;
@@ -483,7 +427,6 @@ static int unzip_to_file(zipfile_t zip, char *name)
     return fd;
 }
 
->>>>>>> aosp/master
 static char *strip(char *s)
 {
     int n;
@@ -588,42 +531,20 @@ void queue_info_dump(void)
     fb_queue_notice("--------------------------------------------");
 }
 
-<<<<<<< HEAD
-
-struct sparse_file **load_sparse_files(const char *fname, int max_size)
-{
-    int fd;
-=======
 static struct sparse_file **load_sparse_files(int fd, int max_size)
 {
->>>>>>> aosp/master
     struct sparse_file *s;
     int files;
     struct sparse_file **out_s;
 
-<<<<<<< HEAD
-    fd = open(fname, O_RDONLY | O_BINARY);
-    if (fd < 0) {
-        die("cannot open '%s'\n", fname);
-    }
-
-    s = sparse_file_import_auto(fd, false);
-    if (!s) {
-        die("cannot sparse read file '%s'\n", fname);
-=======
     s = sparse_file_import_auto(fd, false);
     if (!s) {
         die("cannot sparse read file\n");
->>>>>>> aosp/master
     }
 
     files = sparse_file_resparse(s, max_size, NULL, 0);
     if (files < 0) {
-<<<<<<< HEAD
-        die("Failed to resparse '%s'\n", fname);
-=======
         die("Failed to resparse\n");
->>>>>>> aosp/master
     }
 
     out_s = calloc(sizeof(struct sparse_file *), files + 1);
@@ -633,11 +554,7 @@ static struct sparse_file **load_sparse_files(int fd, int max_size)
 
     files = sparse_file_resparse(s, max_size, out_s, files);
     if (files < 0) {
-<<<<<<< HEAD
-        die("Failed to resparse '%s'\n", fname);
-=======
         die("Failed to resparse\n");
->>>>>>> aosp/master
     }
 
     return out_s;
@@ -698,38 +615,13 @@ static int needs_erase(const char *part)
      return fb_format_supported(usb, part);
 }
 
-<<<<<<< HEAD
-void do_flash(usb_handle *usb, const char *pname, const char *fname)
-=======
 static int load_buf_fd(usb_handle *usb, int fd,
         struct fastboot_buffer *buf)
->>>>>>> aosp/master
 {
     int64_t sz64;
     void *data;
     int64_t limit;
 
-<<<<<<< HEAD
-    sz64 = file_size(fname);
-    limit = get_sparse_limit(usb, sz64);
-    if (limit) {
-        struct sparse_file **s = load_sparse_files(fname, limit);
-        if (s == NULL) {
-            die("cannot sparse load '%s'\n", fname);
-        }
-        while (*s) {
-            sz64 = sparse_file_len(*s, true, false);
-            fb_queue_flash_sparse(pname, *s++, sz64);
-        }
-    } else {
-        unsigned int sz;
-        data = load_file(fname, &sz);
-        if (data == 0) die("cannot load '%s': %s\n", fname, strerror(errno));
-        fb_queue_flash(pname, data, sz);
-    }
-}
-
-=======
     sz64 = file_size(fd);
     if (sz64 < 0) {
         return -1;
@@ -797,7 +689,6 @@ void do_flash(usb_handle *usb, const char *pname, const char *fname)
     flash_buf(pname, &buf);
 }
 
->>>>>>> aosp/master
 void do_update_signature(zipfile_t zip, char *fn)
 {
     void *data;
@@ -808,24 +699,17 @@ void do_update_signature(zipfile_t zip, char *fn)
     fb_queue_command("signature", "installing signature");
 }
 
-<<<<<<< HEAD
-void do_update(char *fn, int erase_first)
-=======
 void do_update(usb_handle *usb, char *fn, int erase_first)
->>>>>>> aosp/master
 {
     void *zdata;
     unsigned zsize;
     void *data;
     unsigned sz;
     zipfile_t zip;
-<<<<<<< HEAD
-=======
     int fd;
     int rc;
     struct fastboot_buffer buf;
     int i;
->>>>>>> aosp/master
 
     queue_info_dump();
 
@@ -854,32 +738,6 @@ void do_update(usb_handle *usb, char *fn, int erase_first)
 
     setup_requirements(data, sz);
 
-<<<<<<< HEAD
-    data = unzip_file(zip, "boot.img", &sz);
-    if (data == 0) die("update package missing boot.img");
-    do_update_signature(zip, "boot.sig");
-    if (erase_first && needs_erase("boot")) {
-        fb_queue_erase("boot");
-    }
-    fb_queue_flash("boot", data, sz);
-
-    data = unzip_file(zip, "recovery.img", &sz);
-    if (data != 0) {
-        do_update_signature(zip, "recovery.sig");
-        if (erase_first && needs_erase("recovery")) {
-            fb_queue_erase("recovery");
-        }
-        fb_queue_flash("recovery", data, sz);
-    }
-
-    data = unzip_file(zip, "system.img", &sz);
-    if (data == 0) die("update package missing system.img");
-    do_update_signature(zip, "system.sig");
-    if (erase_first && needs_erase("system")) {
-        fb_queue_erase("system");
-    }
-    fb_queue_flash("system", data, sz);
-=======
     for (i = 0; i < ARRAY_SIZE(images); i++) {
         fd = unzip_to_file(zip, images[i].img_name);
         if (fd < 0) {
@@ -899,7 +757,6 @@ void do_update(usb_handle *usb, char *fn, int erase_first)
          * program exits.
          */
     }
->>>>>>> aosp/master
 }
 
 void do_send_signature(char *fn)
@@ -920,20 +777,13 @@ void do_send_signature(char *fn)
     fb_queue_command("signature", "installing signature");
 }
 
-<<<<<<< HEAD
-void do_flashall(int erase_first)
-=======
 void do_flashall(usb_handle *usb, int erase_first)
->>>>>>> aosp/master
 {
     char *fname;
     void *data;
     unsigned sz;
-<<<<<<< HEAD
-=======
     struct fastboot_buffer buf;
     int i;
->>>>>>> aosp/master
 
     queue_info_dump();
 
@@ -945,35 +795,6 @@ void do_flashall(usb_handle *usb, int erase_first)
     if (data == 0) die("could not load android-info.txt: %s", strerror(errno));
     setup_requirements(data, sz);
 
-<<<<<<< HEAD
-    fname = find_item("boot", product);
-    data = load_file(fname, &sz);
-    if (data == 0) die("could not load boot.img: %s", strerror(errno));
-    do_send_signature(fname);
-    if (erase_first && needs_erase("boot")) {
-        fb_queue_erase("boot");
-    }
-    fb_queue_flash("boot", data, sz);
-
-    fname = find_item("recovery", product);
-    data = load_file(fname, &sz);
-    if (data != 0) {
-        do_send_signature(fname);
-        if (erase_first && needs_erase("recovery")) {
-            fb_queue_erase("recovery");
-        }
-        fb_queue_flash("recovery", data, sz);
-    }
-
-    fname = find_item("system", product);
-    data = load_file(fname, &sz);
-    if (data == 0) die("could not load system.img: %s", strerror(errno));
-    do_send_signature(fname);
-    if (erase_first && needs_erase("system")) {
-        fb_queue_erase("system");
-    }
-    fb_queue_flash("system", data, sz);
-=======
     for (i = 0; i < ARRAY_SIZE(images); i++) {
         fname = find_item(images[i].part_name, product);
         if (load_buf(usb, fname, &buf)) {
@@ -987,7 +808,6 @@ void do_flashall(usb_handle *usb, int erase_first)
         }
         flash_buf(images[i].part_name, &buf);
     }
->>>>>>> aosp/master
 }
 
 #define skip(n) do { argc -= (n); argv += (n); } while (0)
@@ -1247,16 +1067,6 @@ int main(int argc, char **argv)
             fb_queue_flash(pname, data, sz);
         } else if(!strcmp(*argv, "flashall")) {
             skip(1);
-<<<<<<< HEAD
-            do_flashall(erase_first);
-            wants_reboot = 1;
-        } else if(!strcmp(*argv, "update")) {
-            if (argc > 1) {
-                do_update(argv[1], erase_first);
-                skip(2);
-            } else {
-                do_update("update.zip", erase_first);
-=======
             do_flashall(usb, erase_first);
             wants_reboot = 1;
         } else if(!strcmp(*argv, "update")) {
@@ -1265,7 +1075,6 @@ int main(int argc, char **argv)
                 skip(2);
             } else {
                 do_update(usb, "update.zip", erase_first);
->>>>>>> aosp/master
                 skip(1);
             }
             wants_reboot = 1;

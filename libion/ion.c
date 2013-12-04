@@ -61,11 +61,9 @@ int ion_alloc(int fd, size_t len, size_t align, unsigned int heap_mask,
         struct ion_allocation_data data = {
                 .len = len,
                 .align = align,
-<<<<<<< HEAD
-		//.heap_mask = heap_mask,
-=======
-		.heap_mask = heap_mask,
->>>>>>> aosp/master
+#ifndef TARGET_BOARD_FIBER
+		        .heap_mask = heap_mask,
+#endif
                 .flags = flags,
         };
 

@@ -54,11 +54,7 @@ struct pid_info_t {
     ssize_t parent_length;
 };
 
-<<<<<<< HEAD
-void print_header()
-=======
 static void print_header()
->>>>>>> aosp/master
 {
     printf("%-9s %5s %10s %4s %9s %18s %9s %10s %s\n",
             "COMMAND",
@@ -72,20 +68,12 @@ static void print_header()
             "NAME");
 }
 
-<<<<<<< HEAD
-void print_type(char *type, struct pid_info_t* info)
-=======
 static void print_type(char *type, struct pid_info_t* info)
->>>>>>> aosp/master
 {
     static ssize_t link_dest_size;
     static char link_dest[PATH_MAX];
 
-<<<<<<< HEAD
-    strncat(info->path, type, sizeof(info->path));
-=======
     strlcat(info->path, type, sizeof(info->path));
->>>>>>> aosp/master
     if ((link_dest_size = readlink(info->path, link_dest, sizeof(link_dest)-1)) < 0) {
         if (errno == ENOENT)
             goto out;
@@ -108,11 +96,7 @@ out:
 }
 
 // Prints out all file that have been memory mapped
-<<<<<<< HEAD
-void print_maps(struct pid_info_t* info)
-=======
 static void print_maps(struct pid_info_t* info)
->>>>>>> aosp/master
 {
     FILE *maps;
     char buffer[PATH_MAX + 100];
@@ -123,11 +107,7 @@ static void print_maps(struct pid_info_t* info)
     long int inode;
     char file[PATH_MAX];
 
-<<<<<<< HEAD
-    strncat(info->path, "maps", sizeof(info->path));
-=======
     strlcat(info->path, "maps", sizeof(info->path));
->>>>>>> aosp/master
 
     maps = fopen(info->path, "r");
     if (!maps)
@@ -151,17 +131,10 @@ out:
 }
 
 // Prints out all open file descriptors
-<<<<<<< HEAD
-void print_fds(struct pid_info_t* info)
-{
-    static char* fd_path = "fd/";
-    strncat(info->path, fd_path, sizeof(info->path));
-=======
 static void print_fds(struct pid_info_t* info)
 {
     static char* fd_path = "fd/";
     strlcat(info->path, fd_path, sizeof(info->path));
->>>>>>> aosp/master
 
     int previous_length = info->parent_length;
     info->parent_length += strlen(fd_path);
@@ -190,11 +163,7 @@ out:
     info->path[info->parent_length] = '\0';
 }
 
-<<<<<<< HEAD
-void lsof_dumpinfo(pid_t pid)
-=======
 static void lsof_dumpinfo(pid_t pid)
->>>>>>> aosp/master
 {
     int fd;
     struct pid_info_t info;
@@ -218,11 +187,7 @@ static void lsof_dumpinfo(pid_t pid)
     }
 
     // Read the command line information; each argument is terminated with NULL.
-<<<<<<< HEAD
-    strncat(info.path, "cmdline", sizeof(info.path));
-=======
     strlcat(info.path, "cmdline", sizeof(info.path));
->>>>>>> aosp/master
     fd = open(info.path, O_RDONLY);
     if (fd < 0) {
         fprintf(stderr, "Couldn't read %s\n", info.path);

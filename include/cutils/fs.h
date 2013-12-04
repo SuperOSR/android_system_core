@@ -55,8 +55,6 @@ extern int fs_read_atomic_int(const char* path, int* value);
  */
 extern int fs_write_atomic_int(const char* path, int value);
 
-<<<<<<< HEAD
-=======
 /*
  * Ensure that all directories along given path exist, creating parent
  * directories as needed.  Validates that given path is absolute and that
@@ -65,7 +63,6 @@ extern int fs_write_atomic_int(const char* path, int value);
  */
 extern int fs_mkdirs(const char* path, mode_t mode);
 
->>>>>>> aosp/master
 #ifdef __cplusplus
 }
 #endif

@@ -5,15 +5,6 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <fcntl.h>
-<<<<<<< HEAD
-
-static void usage(void)
-{
-        fprintf(stderr, "touch: usage: touch [-alm] [-t time_t] <file>\n");
-        exit(1);
-}
-
-=======
 #include <time.h>
 
 static void usage(void)
@@ -48,7 +39,6 @@ static time_t parse_time(char *s)
     return mktime(&tm);
 }
 
->>>>>>> aosp/master
 int touch_main(int argc, char *argv[])
 {
         int i, fd, aflag = 0, mflag = 0, debug = 0, flags = 0;
@@ -68,15 +58,9 @@ int touch_main(int argc, char *argv[])
                     case 't':
                         if ((i+1) >= argc)
                             usage();
-<<<<<<< HEAD
-                        specified_time.tv_sec = atol(argv[++i]);
-                        if (specified_time.tv_sec == 0) {
-                            fprintf(stderr, "touch: invalid time_t\n");
-=======
                         specified_time.tv_sec = parse_time(argv[++i]);
                         if (specified_time.tv_sec == -1) {
                             fprintf(stderr, "touch: invalid timestamp specified\n");
->>>>>>> aosp/master
                             exit(1);
                         }
                         specified_time.tv_nsec = 0;

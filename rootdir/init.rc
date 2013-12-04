@@ -4,10 +4,7 @@
 # This is a common source of Android security bugs.
 #
 
-<<<<<<< HEAD
-=======
 import /init.environ.rc
->>>>>>> aosp/master
 import /init.usb.rc
 import /init.${ro.hardware}.rc
 import /init.trace.rc
@@ -34,21 +31,6 @@ sysclktz 0
 
 loglevel 3
 
-<<<<<<< HEAD
-# setup the global environment
-    export PATH /sbin:/vendor/bin:/system/sbin:/system/bin:/system/xbin
-    export LD_LIBRARY_PATH /vendor/lib:/system/lib
-    export ANDROID_BOOTLOGO 1
-    export ANDROID_ROOT /system
-    export ANDROID_ASSETS /system/app
-    export ANDROID_DATA /data
-    export ANDROID_STORAGE /storage
-    export ASEC_MOUNTPOINT /mnt/asec
-    export LOOP_MOUNTPOINT /mnt/obb
-    export BOOTCLASSPATH /system/framework/core.jar:/system/framework/conscrypt.jar:/system/framework/okhttp.jar:/system/framework/core-junit.jar:/system/framework/bouncycastle.jar:/system/framework/ext.jar:/system/framework/framework.jar:/system/framework/telephony-common.jar:/system/framework/voip-common.jar:/system/framework/mms-common.jar:/system/framework/android.policy.jar:/system/framework/services.jar:/system/framework/apache-xml.jar
-
-=======
->>>>>>> aosp/master
 # Backward compatibility
     symlink /system/etc /etc
     symlink /sys/kernel/debug /d
@@ -62,8 +44,6 @@ loglevel 3
     mount cgroup none /acct cpuacct
     mkdir /acct/uid
 
-<<<<<<< HEAD
-=======
 # Create cgroup mount point for memory
     mount tmpfs none /sys/fs/cgroup mode=0750,uid=0,gid=1000
     mkdir /sys/fs/cgroup/memory 0750 root system
@@ -77,7 +57,6 @@ loglevel 3
     chown root system /sys/fs/cgroup/memory/sw/tasks
     chmod 0660 /sys/fs/cgroup/memory/sw/tasks
 
->>>>>>> aosp/master
     mkdir /system
     mkdir /data 0771 system system
     mkdir /cache 0770 system cache
@@ -85,12 +64,8 @@ loglevel 3
 
     # See storage config details at http://source.android.com/tech/storage/
     mkdir /mnt/shell 0700 shell shell
-<<<<<<< HEAD
-    mkdir /storage 0050 root sdcard_r
-=======
     mkdir /mnt/media_rw 0700 media_rw media_rw
     mkdir /storage 0751 root sdcard_r
->>>>>>> aosp/master
 
     # Directory for putting things only root should see.
     mkdir /mnt/secure 0700 root root
@@ -162,13 +137,10 @@ loglevel 3
 # This is needed by any process that uses socket tagging.
     chmod 0644 /dev/xt_qtaguid
 
-<<<<<<< HEAD
-=======
 # Create location for fs_mgr to store abbreviated output from filesystem
 # checker programs.
     mkdir /dev/fscklogs 0770 root system
 
->>>>>>> aosp/master
 on post-fs
     # once everything is setup, no need to modify /
     mount rootfs rootfs / ro remount
@@ -213,12 +185,9 @@ on post-fs-data
     # We restorecon /data in case the userdata partition has been reset.
     restorecon /data
 
-<<<<<<< HEAD
-=======
     # Avoid predictable entropy pool. Carry over entropy from previous boot.
     copy /data/system/entropy.dat /dev/urandom
 
->>>>>>> aosp/master
     # Create dump dir and collect dumps.
     # Do this before we mount cache so eventually we can use cache for
     # storing dumps on platforms which do not have a dedicated dump partition.
@@ -242,10 +211,7 @@ on post-fs-data
     mkdir /data/misc/bluetooth 0770 system system
     mkdir /data/misc/keystore 0700 keystore keystore
     mkdir /data/misc/keychain 0771 system system
-<<<<<<< HEAD
-=======
     mkdir /data/misc/radio 0770 system radio
->>>>>>> aosp/master
     mkdir /data/misc/sms 0770 system radio
     mkdir /data/misc/zoneinfo 0775 system system
     mkdir /data/misc/vpn 0770 system vpn
@@ -398,22 +364,6 @@ on boot
 
 # Define TCP buffer sizes for various networks
 #   ReadMin, ReadInitial, ReadMax, WriteMin, WriteInitial, WriteMax,
-<<<<<<< HEAD
-    setprop net.tcp.buffersize.default 4096,87380,110208,4096,16384,110208
-    setprop net.tcp.buffersize.wifi    524288,1048576,2097152,262144,524288,1048576
-    setprop net.tcp.buffersize.lte     524288,1048576,2097152,262144,524288,1048576
-    setprop net.tcp.buffersize.umts    4094,87380,110208,4096,16384,110208
-    setprop net.tcp.buffersize.hspa    4094,87380,262144,4096,16384,262144
-    setprop net.tcp.buffersize.hsupa   4094,87380,262144,4096,16384,262144
-    setprop net.tcp.buffersize.hsdpa   4094,87380,262144,4096,16384,262144
-    setprop net.tcp.buffersize.hspap   4094,87380,1220608,4096,16384,1220608
-    setprop net.tcp.buffersize.edge    4093,26280,35040,4096,16384,35040
-    setprop net.tcp.buffersize.gprs    4092,8760,11680,4096,8760,11680
-    setprop net.tcp.buffersize.evdo    4094,87380,262144,4096,16384,262144
-
-# Set this property so surfaceflinger is not started by system_init
-    setprop system_init.startsurfaceflinger 0
-=======
     setprop net.tcp.buffersize.default  4096,87380,110208,4096,16384,110208
     setprop net.tcp.buffersize.wifi     524288,1048576,2097152,262144,524288,1048576
     setprop net.tcp.buffersize.ethernet 524288,1048576,3145728,524288,1048576,2097152
@@ -426,7 +376,6 @@ on boot
     setprop net.tcp.buffersize.edge     4093,26280,35040,4096,16384,35040
     setprop net.tcp.buffersize.gprs     4092,8760,11680,4096,8760,11680
     setprop net.tcp.buffersize.evdo     4094,87380,262144,4096,16384,262144
->>>>>>> aosp/master
 
     class_start core
     class_start main
@@ -457,8 +406,6 @@ on property:vold.decrypt=trigger_shutdown_framework
     class_reset late_start
     class_reset main
 
-<<<<<<< HEAD
-=======
 on property:sys.powerctl=*
     powerctl ${sys.powerctl}
 
@@ -466,7 +413,6 @@ on property:sys.powerctl=*
 on property:sys.sysctl.extra_free_kbytes=*
     write /proc/sys/vm/extra_free_kbytes ${sys.sysctl.extra_free_kbytes}
 
->>>>>>> aosp/master
 ## Daemon processes to be run by init.
 ##
 service ueventd /sbin/ueventd
@@ -474,8 +420,6 @@ service ueventd /sbin/ueventd
     critical
     seclabel u:r:ueventd:s0
 
-<<<<<<< HEAD
-=======
 service healthd /sbin/healthd
     class core
     critical
@@ -486,7 +430,6 @@ service healthd-charger /sbin/healthd -n
     critical
     seclabel u:r:healthd:s0
 
->>>>>>> aosp/master
 service console /system/bin/sh
     class core
     console
@@ -513,10 +456,7 @@ service servicemanager /system/bin/servicemanager
     user system
     group system
     critical
-<<<<<<< HEAD
-=======
     onrestart restart healthd
->>>>>>> aosp/master
     onrestart restart zygote
     onrestart restart media
     onrestart restart surfaceflinger

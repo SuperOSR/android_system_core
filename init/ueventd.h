@@ -17,8 +17,6 @@
 #ifndef _INIT_UEVENTD_H_
 #define _INIT_UEVENTD_H_
 
-<<<<<<< HEAD
-=======
 #include <cutils/list.h>
 #include <sys/types.h>
 
@@ -34,7 +32,6 @@ struct ueventd_subsystem {
     const char *dirname;
 };
 
->>>>>>> aosp/master
 int ueventd_main(int argc, char **argv);
 
 #endif

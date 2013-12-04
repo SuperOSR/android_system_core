@@ -16,10 +16,7 @@
 
 #include <unistd.h>
 #include <sys/reboot.h>
-<<<<<<< HEAD
-=======
 #include <sys/syscall.h>
->>>>>>> aosp/master
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -104,25 +101,19 @@ static void remount_ro(void)
     return;
 }
 
-<<<<<<< HEAD
+#ifdef TARGET_BOARD_FIBER
 extern int write_misc(char *reason);
-=======
->>>>>>> aosp/master
+#endif
 
 int android_reboot(int cmd, int flags, char *arg)
 {
     int ret;
 
-<<<<<<< HEAD
-    if (!(flags & ANDROID_RB_FLAG_NO_SYNC))
-        sync();
-    sleep(2);
-    if (!(flags & ANDROID_RB_FLAG_NO_REMOUNT_RO))
-        remount_ro();
-=======
     sync();
+#ifdef TARGET_BOARD_FIBER
+    sleep(2);
+#endif
     remount_ro();
->>>>>>> aosp/master
 
     switch (cmd) {
         case ANDROID_RB_RESTART:
@@ -134,15 +125,13 @@ int android_reboot(int cmd, int flags, char *arg)
             break;
 
         case ANDROID_RB_RESTART2:
-<<<<<<< HEAD
-            //ret = __reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
-            //               LINUX_REBOOT_CMD_RESTART2, arg);
+#ifdef TARGET_BOARD_FIBER
             write_misc(arg);
 			ret = reboot(RB_AUTOBOOT);
-=======
+#else
             ret = syscall(__NR_reboot, LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
                            LINUX_REBOOT_CMD_RESTART2, arg);
->>>>>>> aosp/master
+#endif
             break;
 
         default:

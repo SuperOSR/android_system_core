@@ -844,11 +844,7 @@ static void smart_socket_close(asocket *s)
     free(s);
 }
 
-<<<<<<< HEAD
-asocket *create_smart_socket(void (*action_cb)(asocket *s, const char *act))
-=======
 static asocket *create_smart_socket(void)
->>>>>>> aosp/master
 {
     D("Creating smart socket \n");
     asocket *s = calloc(1, sizeof(asocket));
@@ -856,23 +852,6 @@ static asocket *create_smart_socket(void)
     s->enqueue = smart_socket_enqueue;
     s->ready = smart_socket_ready;
     s->close = smart_socket_close;
-<<<<<<< HEAD
-    s->extra = action_cb;
-
-    D("SS(%d): created %p\n", s->id, action_cb);
-    return s;
-}
-
-void smart_socket_action(asocket *s, const char *act)
-{
-
-}
-
-void connect_to_smartsocket(asocket *s)
-{
-    D("Connecting to smart socket \n");
-    asocket *ss = create_smart_socket(smart_socket_action);
-=======
 
     D("SS(%d)\n", s->id);
     return s;
@@ -882,7 +861,6 @@ void connect_to_smartsocket(asocket *s)
 {
     D("Connecting to smart socket \n");
     asocket *ss = create_smart_socket();
->>>>>>> aosp/master
     s->peer = ss;
     ss->peer = s;
     s->ready(s);

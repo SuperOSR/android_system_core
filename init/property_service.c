@@ -78,10 +78,7 @@ struct {
     { "runtime.",         AID_SYSTEM,   0 },
     { "hw.",              AID_SYSTEM,   0 },
     { "sys.",             AID_SYSTEM,   0 },
-<<<<<<< HEAD
-=======
     { "sys.powerctl",     AID_SHELL,    0 },
->>>>>>> aosp/master
     { "service.",         AID_SYSTEM,   0 },
     { "wlan.",            AID_SYSTEM,   0 },
     { "gps.",             AID_GPS,      0 },
@@ -281,8 +278,6 @@ static void write_persistent_property(const char *name, const char *value)
     }
 }
 
-<<<<<<< HEAD
-=======
 static bool is_legal_property_name(const char* name, size_t namelen)
 {
     size_t i;
@@ -311,7 +306,6 @@ static bool is_legal_property_name(const char* name, size_t namelen)
     return true;
 }
 
->>>>>>> aosp/master
 int property_set(const char *name, const char *value)
 {
     prop_info *pi;
@@ -320,14 +314,8 @@ int property_set(const char *name, const char *value)
     size_t namelen = strlen(name);
     size_t valuelen = strlen(value);
 
-<<<<<<< HEAD
-    if(namelen >= PROP_NAME_MAX) return -1;
-    if(valuelen >= PROP_VALUE_MAX) return -1;
-    if(namelen < 1) return -1;
-=======
     if (!is_legal_property_name(name, namelen)) return -1;
     if (valuelen >= PROP_VALUE_MAX) return -1;
->>>>>>> aosp/master
 
     pi = (prop_info*) __system_property_find(name);
 
@@ -339,11 +327,7 @@ int property_set(const char *name, const char *value)
     } else {
         ret = __system_property_add(name, namelen, value, valuelen);
         if (ret < 0) {
-<<<<<<< HEAD
-            ERROR("Failed to set '%s'='%s'", name, value);
-=======
             ERROR("Failed to set '%s'='%s'\n", name, value);
->>>>>>> aosp/master
             return ret;
         }
     }
@@ -409,15 +393,12 @@ void handle_property_set_fd()
         msg.name[PROP_NAME_MAX-1] = 0;
         msg.value[PROP_VALUE_MAX-1] = 0;
 
-<<<<<<< HEAD
-=======
         if (!is_legal_property_name(msg.name, strlen(msg.name))) {
             ERROR("sys_prop: illegal property name. Got: \"%s\"\n", msg.name);
             close(s);
             return;
         }
 
->>>>>>> aosp/master
         getpeercon(s, &source_ctx);
 
         if(memcmp(msg.name,"ctl.",4) == 0) {

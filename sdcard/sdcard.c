@@ -30,14 +30,11 @@
 #include <pthread.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-<<<<<<< HEAD
-=======
 #include <sys/inotify.h>
 
 #include <cutils/fs.h>
 #include <cutils/hashmap.h>
 #include <cutils/multiuser.h>
->>>>>>> aosp/master
 
 #include <private/android_filesystem_config.h>
 
@@ -65,8 +62,6 @@
  * - if an op that returns a fuse_entry fails writing the reply to the
  * kernel, you must rollback the refcount to reflect the reference the
  * kernel did not actually acquire
-<<<<<<< HEAD
-=======
  *
  * This daemon can also derive custom filesystem permissions based on directory
  * structure when requested. These custom permissions support several features:
@@ -91,7 +86,6 @@
  * rwxrwx--- root:sdcard_all    /Android/user
  * rwxrwx--x root:sdcard_rw     /Android/user/10
  * rwxrwx--- u10_a12:sdcard_rw  /Android/user/10/Android/data/com.example
->>>>>>> aosp/master
  */
 
 #define FUSE_TRACE 0
@@ -124,8 +118,6 @@
  * or that a reply has already been written. */
 #define NO_STATUS 1
 
-<<<<<<< HEAD
-=======
 /* Path to system-provided mapping of package name to appIds */
 static const char* const kPackagesListFile = "/data/system/packages.list";
 
@@ -159,7 +151,6 @@ typedef enum {
     DERIVE_UNIFIED,
 } derive_t;
 
->>>>>>> aosp/master
 struct handle {
     int fd;
 };
@@ -173,8 +164,6 @@ struct node {
     __u64 nid;
     __u64 gen;
 
-<<<<<<< HEAD
-=======
     /* State derived based on current position in hierarchy. */
     perm_t perm;
     userid_t userid;
@@ -182,7 +171,6 @@ struct node {
     gid_t gid;
     mode_t mode;
 
->>>>>>> aosp/master
     struct node *next;          /* per-dir sibling list */
     struct node *child;         /* first contained file by this dir */
     struct node *parent;        /* containing directory */
@@ -195,10 +183,6 @@ struct node {
      * namelen for both fields.
      */
     char *actual_name;
-<<<<<<< HEAD
-};
-
-=======
 
     /* If non-null, an exact underlying path that should be grafted into this
      * position. Used to support things like OBB. */
@@ -223,17 +207,12 @@ static bool int_equals(void *keyA, void *keyB) {
     return keyA == keyB;
 }
 
->>>>>>> aosp/master
 /* Global data structure shared by all fuse handlers. */
 struct fuse {
     pthread_mutex_t lock;
 
     __u64 next_generation;
     int fd;
-<<<<<<< HEAD
-    struct node root;
-    char rootpath[PATH_MAX];
-=======
     derive_t derive;
     bool split_perms;
     gid_t write_gid;
@@ -242,7 +221,6 @@ struct fuse {
 
     Hashmap* package_to_appid;
     Hashmap* appid_with_rw;
->>>>>>> aosp/master
 };
 
 /* Private data used by a single fuse handler. */
@@ -327,11 +305,6 @@ static void remove_node_from_parent_locked(struct node* node)
  * Populates 'buf' with the path and returns the length of the path on success,
  * or returns -1 if the path is too long for the provided buffer.
  */
-<<<<<<< HEAD
-static ssize_t get_node_path_locked(struct node* node, char* buf, size_t bufsize)
-{
-    size_t namelen = node->namelen;
-=======
 static ssize_t get_node_path_locked(struct node* node, char* buf, size_t bufsize) {
     const char* name;
     size_t namelen;
@@ -346,17 +319,12 @@ static ssize_t get_node_path_locked(struct node* node, char* buf, size_t bufsize
         namelen = node->namelen;
     }
 
->>>>>>> aosp/master
     if (bufsize < namelen + 1) {
         return -1;
     }
 
     ssize_t pathlen = 0;
-<<<<<<< HEAD
-    if (node->parent) {
-=======
     if (node->parent && node->graft_path == NULL) {
->>>>>>> aosp/master
         pathlen = get_node_path_locked(node->parent, buf, bufsize - namelen - 2);
         if (pathlen < 0) {
             return -1;
@@ -364,10 +332,6 @@ static ssize_t get_node_path_locked(struct node* node, char* buf, size_t bufsize
         buf[pathlen++] = '/';
     }
 
-<<<<<<< HEAD
-    const char* name = node->actual_name ? node->actual_name : node->name;
-=======
->>>>>>> aosp/master
     memcpy(buf + pathlen, name, namelen + 1); /* include trailing \0 */
     return pathlen + namelen;
 }
@@ -401,11 +365,7 @@ static char* find_file_within(const char* path, const char* name,
         struct dirent* entry;
         DIR* dir = opendir(path);
         if (!dir) {
-<<<<<<< HEAD
-            ERROR("opendir %s failed: %s", path, strerror(errno));
-=======
             ERROR("opendir %s failed: %s\n", path, strerror(errno));
->>>>>>> aosp/master
             return actual;
         }
         while ((entry = readdir(dir))) {
@@ -420,15 +380,9 @@ static char* find_file_within(const char* path, const char* name,
     return actual;
 }
 
-<<<<<<< HEAD
-static void attr_from_stat(struct fuse_attr *attr, const struct stat *s, __u64 nid)
-{
-    attr->ino = nid;
-=======
 static void attr_from_stat(struct fuse_attr *attr, const struct stat *s, const struct node* node)
 {
     attr->ino = node->nid;
->>>>>>> aosp/master
     attr->size = s->st_size;
     attr->blocks = s->st_blocks;
     attr->atime = s->st_atime;
@@ -440,21 +394,6 @@ static void attr_from_stat(struct fuse_attr *attr, const struct stat *s, const s
     attr->mode = s->st_mode;
     attr->nlink = s->st_nlink;
 
-<<<<<<< HEAD
-        /* force permissions to something reasonable:
-         * world readable
-         * writable by the sdcard group
-         */
-    if (attr->mode & 0100) {
-        attr->mode = (attr->mode & (~0777)) | 0775;
-    } else {
-        attr->mode = (attr->mode & (~0777)) | 0664;
-    }
-
-        /* all files owned by root.sdcard */
-    attr->uid = 0;
-    attr->gid = AID_SDCARD_RW;
-=======
     attr->uid = node->uid;
     attr->gid = node->gid;
 
@@ -618,7 +557,6 @@ static bool check_caller_access_to_name(struct fuse* fuse,
 static bool check_caller_access_to_node(struct fuse* fuse,
         const struct fuse_in_header *hdr, const struct node* node, int mode, bool has_rw) {
     return check_caller_access_to_name(fuse, hdr, node->parent, node->name, mode, has_rw);
->>>>>>> aosp/master
 }
 
 struct node *create_node_locked(struct fuse* fuse,
@@ -649,11 +587,8 @@ struct node *create_node_locked(struct fuse* fuse,
     node->namelen = namelen;
     node->nid = ptr_to_id(node);
     node->gen = fuse->next_generation++;
-<<<<<<< HEAD
-=======
 
     derive_permissions_locked(fuse, parent, node);
->>>>>>> aosp/master
     acquire_node_locked(node);
     add_node_to_parent_locked(node, parent);
     return node;
@@ -746,31 +681,21 @@ static struct node* acquire_or_create_child_locked(
     return child;
 }
 
-<<<<<<< HEAD
-static void fuse_init(struct fuse *fuse, int fd, const char *source_path)
-{
-=======
 static void fuse_init(struct fuse *fuse, int fd, const char *source_path,
         gid_t write_gid, derive_t derive, bool split_perms) {
->>>>>>> aosp/master
     pthread_mutex_init(&fuse->lock, NULL);
 
     fuse->fd = fd;
     fuse->next_generation = 0;
-<<<<<<< HEAD
-=======
     fuse->derive = derive;
     fuse->split_perms = split_perms;
     fuse->write_gid = write_gid;
->>>>>>> aosp/master
 
     memset(&fuse->root, 0, sizeof(fuse->root));
     fuse->root.nid = FUSE_ROOT_ID; /* 1 */
     fuse->root.refcount = 2;
     fuse->root.namelen = strlen(source_path);
     fuse->root.name = strdup(source_path);
-<<<<<<< HEAD
-=======
     fuse->root.userid = 0;
     fuse->root.uid = AID_ROOT;
 
@@ -806,7 +731,6 @@ static void fuse_init(struct fuse *fuse, int fd, const char *source_path,
         snprintf(fuse->obbpath, sizeof(fuse->obbpath), "%s/Android/obb", source_path);
         break;
     }
->>>>>>> aosp/master
 }
 
 static void fuse_status(struct fuse *fuse, __u64 unique, int err)
@@ -858,11 +782,7 @@ static int fuse_reply_entry(struct fuse* fuse, __u64 unique,
         return -ENOMEM;
     }
     memset(&out, 0, sizeof(out));
-<<<<<<< HEAD
-    attr_from_stat(&out.attr, &s, node->nid);
-=======
     attr_from_stat(&out.attr, &s, node);
->>>>>>> aosp/master
     out.attr_valid = 10;
     out.entry_valid = 10;
     out.nodeid = node->nid;
@@ -872,11 +792,7 @@ static int fuse_reply_entry(struct fuse* fuse, __u64 unique,
     return NO_STATUS;
 }
 
-<<<<<<< HEAD
-static int fuse_reply_attr(struct fuse* fuse, __u64 unique, __u64 nid,
-=======
 static int fuse_reply_attr(struct fuse* fuse, __u64 unique, const struct node* node,
->>>>>>> aosp/master
         const char* path)
 {
     struct fuse_attr_out out;
@@ -886,11 +802,7 @@ static int fuse_reply_attr(struct fuse* fuse, __u64 unique, const struct node* n
         return -errno;
     }
     memset(&out, 0, sizeof(out));
-<<<<<<< HEAD
-    attr_from_stat(&out.attr, &s, nid);
-=======
     attr_from_stat(&out.attr, &s, node);
->>>>>>> aosp/master
     out.attr_valid = 10;
     fuse_reply(fuse, unique, &out, sizeof(out));
     return NO_STATUS;
@@ -915,13 +827,10 @@ static int handle_lookup(struct fuse* fuse, struct fuse_handler* handler,
             child_path, sizeof(child_path), 1))) {
         return -ENOENT;
     }
-<<<<<<< HEAD
-=======
     if (!check_caller_access_to_name(fuse, hdr, parent_node, name, R_OK, false)) {
         return -EACCES;
     }
 
->>>>>>> aosp/master
     return fuse_reply_entry(fuse, hdr->unique, parent_node, name, actual_name, child_path);
 }
 
@@ -959,33 +868,23 @@ static int handle_getattr(struct fuse* fuse, struct fuse_handler* handler,
     if (!node) {
         return -ENOENT;
     }
-<<<<<<< HEAD
-    return fuse_reply_attr(fuse, hdr->unique, hdr->nodeid, path);
-=======
     if (!check_caller_access_to_node(fuse, hdr, node, R_OK, false)) {
         return -EACCES;
     }
 
     return fuse_reply_attr(fuse, hdr->unique, node, path);
->>>>>>> aosp/master
 }
 
 static int handle_setattr(struct fuse* fuse, struct fuse_handler* handler,
         const struct fuse_in_header *hdr, const struct fuse_setattr_in *req)
 {
-<<<<<<< HEAD
-=======
     bool has_rw;
->>>>>>> aosp/master
     struct node* node;
     char path[PATH_MAX];
     struct timespec times[2];
 
     pthread_mutex_lock(&fuse->lock);
-<<<<<<< HEAD
-=======
     has_rw = get_caller_has_rw_locked(fuse, hdr);
->>>>>>> aosp/master
     node = lookup_node_and_path_by_id_locked(fuse, hdr->nodeid, path, sizeof(path));
     TRACE("[%d] SETATTR fh=%llx valid=%x @ %llx (%s)\n", handler->token,
             req->fh, req->valid, hdr->nodeid, node ? node->name : "?");
@@ -994,12 +893,9 @@ static int handle_setattr(struct fuse* fuse, struct fuse_handler* handler,
     if (!node) {
         return -ENOENT;
     }
-<<<<<<< HEAD
-=======
     if (!check_caller_access_to_node(fuse, hdr, node, W_OK, has_rw)) {
         return -EACCES;
     }
->>>>>>> aosp/master
 
     /* XXX: incomplete implementation on purpose.
      * chmod/chown should NEVER be implemented.*/
@@ -1039,30 +935,20 @@ static int handle_setattr(struct fuse* fuse, struct fuse_handler* handler,
             return -errno;
         }
     }
-<<<<<<< HEAD
-    return fuse_reply_attr(fuse, hdr->unique, hdr->nodeid, path);
-=======
     return fuse_reply_attr(fuse, hdr->unique, node, path);
->>>>>>> aosp/master
 }
 
 static int handle_mknod(struct fuse* fuse, struct fuse_handler* handler,
         const struct fuse_in_header* hdr, const struct fuse_mknod_in* req, const char* name)
 {
-<<<<<<< HEAD
-=======
     bool has_rw;
->>>>>>> aosp/master
     struct node* parent_node;
     char parent_path[PATH_MAX];
     char child_path[PATH_MAX];
     const char* actual_name;
 
     pthread_mutex_lock(&fuse->lock);
-<<<<<<< HEAD
-=======
     has_rw = get_caller_has_rw_locked(fuse, hdr);
->>>>>>> aosp/master
     parent_node = lookup_node_and_path_by_id_locked(fuse, hdr->nodeid,
             parent_path, sizeof(parent_path));
     TRACE("[%d] MKNOD %s 0%o @ %llx (%s)\n", handler->token,
@@ -1073,12 +959,9 @@ static int handle_mknod(struct fuse* fuse, struct fuse_handler* handler,
             child_path, sizeof(child_path), 1))) {
         return -ENOENT;
     }
-<<<<<<< HEAD
-=======
     if (!check_caller_access_to_name(fuse, hdr, parent_node, name, W_OK, has_rw)) {
         return -EACCES;
     }
->>>>>>> aosp/master
     __u32 mode = (req->mode & (~0777)) | 0664;
     if (mknod(child_path, mode, req->rdev) < 0) {
         return -errno;
@@ -1089,20 +972,14 @@ static int handle_mknod(struct fuse* fuse, struct fuse_handler* handler,
 static int handle_mkdir(struct fuse* fuse, struct fuse_handler* handler,
         const struct fuse_in_header* hdr, const struct fuse_mkdir_in* req, const char* name)
 {
-<<<<<<< HEAD
-=======
     bool has_rw;
->>>>>>> aosp/master
     struct node* parent_node;
     char parent_path[PATH_MAX];
     char child_path[PATH_MAX];
     const char* actual_name;
 
     pthread_mutex_lock(&fuse->lock);
-<<<<<<< HEAD
-=======
     has_rw = get_caller_has_rw_locked(fuse, hdr);
->>>>>>> aosp/master
     parent_node = lookup_node_and_path_by_id_locked(fuse, hdr->nodeid,
             parent_path, sizeof(parent_path));
     TRACE("[%d] MKDIR %s 0%o @ %llx (%s)\n", handler->token,
@@ -1113,18 +990,13 @@ static int handle_mkdir(struct fuse* fuse, struct fuse_handler* handler,
             child_path, sizeof(child_path), 1))) {
         return -ENOENT;
     }
-<<<<<<< HEAD
-=======
     if (!check_caller_access_to_name(fuse, hdr, parent_node, name, W_OK, has_rw)) {
         return -EACCES;
     }
->>>>>>> aosp/master
     __u32 mode = (req->mode & (~0777)) | 0775;
     if (mkdir(child_path, mode) < 0) {
         return -errno;
     }
-<<<<<<< HEAD
-=======
 
     /* When creating /Android/data and /Android/obb, mark them as .nomedia */
     if (parent_node->perm == PERM_ANDROID && !strcasecmp(name, "data")) {
@@ -1144,26 +1016,19 @@ static int handle_mkdir(struct fuse* fuse, struct fuse_handler* handler,
         }
     }
 
->>>>>>> aosp/master
     return fuse_reply_entry(fuse, hdr->unique, parent_node, name, actual_name, child_path);
 }
 
 static int handle_unlink(struct fuse* fuse, struct fuse_handler* handler,
         const struct fuse_in_header* hdr, const char* name)
 {
-<<<<<<< HEAD
-=======
     bool has_rw;
->>>>>>> aosp/master
     struct node* parent_node;
     char parent_path[PATH_MAX];
     char child_path[PATH_MAX];
 
     pthread_mutex_lock(&fuse->lock);
-<<<<<<< HEAD
-=======
     has_rw = get_caller_has_rw_locked(fuse, hdr);
->>>>>>> aosp/master
     parent_node = lookup_node_and_path_by_id_locked(fuse, hdr->nodeid,
             parent_path, sizeof(parent_path));
     TRACE("[%d] UNLINK %s @ %llx (%s)\n", handler->token,
@@ -1174,12 +1039,9 @@ static int handle_unlink(struct fuse* fuse, struct fuse_handler* handler,
             child_path, sizeof(child_path), 1)) {
         return -ENOENT;
     }
-<<<<<<< HEAD
-=======
     if (!check_caller_access_to_name(fuse, hdr, parent_node, name, W_OK, has_rw)) {
         return -EACCES;
     }
->>>>>>> aosp/master
     if (unlink(child_path) < 0) {
         return -errno;
     }
@@ -1189,19 +1051,13 @@ static int handle_unlink(struct fuse* fuse, struct fuse_handler* handler,
 static int handle_rmdir(struct fuse* fuse, struct fuse_handler* handler,
         const struct fuse_in_header* hdr, const char* name)
 {
-<<<<<<< HEAD
-=======
     bool has_rw;
->>>>>>> aosp/master
     struct node* parent_node;
     char parent_path[PATH_MAX];
     char child_path[PATH_MAX];
 
     pthread_mutex_lock(&fuse->lock);
-<<<<<<< HEAD
-=======
     has_rw = get_caller_has_rw_locked(fuse, hdr);
->>>>>>> aosp/master
     parent_node = lookup_node_and_path_by_id_locked(fuse, hdr->nodeid,
             parent_path, sizeof(parent_path));
     TRACE("[%d] RMDIR %s @ %llx (%s)\n", handler->token,
@@ -1212,12 +1068,9 @@ static int handle_rmdir(struct fuse* fuse, struct fuse_handler* handler,
             child_path, sizeof(child_path), 1)) {
         return -ENOENT;
     }
-<<<<<<< HEAD
-=======
     if (!check_caller_access_to_name(fuse, hdr, parent_node, name, W_OK, has_rw)) {
         return -EACCES;
     }
->>>>>>> aosp/master
     if (rmdir(child_path) < 0) {
         return -errno;
     }
@@ -1228,10 +1081,7 @@ static int handle_rename(struct fuse* fuse, struct fuse_handler* handler,
         const struct fuse_in_header* hdr, const struct fuse_rename_in* req,
         const char* old_name, const char* new_name)
 {
-<<<<<<< HEAD
-=======
     bool has_rw;
->>>>>>> aosp/master
     struct node* old_parent_node;
     struct node* new_parent_node;
     struct node* child_node;
@@ -1243,10 +1093,7 @@ static int handle_rename(struct fuse* fuse, struct fuse_handler* handler,
     int res;
 
     pthread_mutex_lock(&fuse->lock);
-<<<<<<< HEAD
-=======
     has_rw = get_caller_has_rw_locked(fuse, hdr);
->>>>>>> aosp/master
     old_parent_node = lookup_node_and_path_by_id_locked(fuse, hdr->nodeid,
             old_parent_path, sizeof(old_parent_path));
     new_parent_node = lookup_node_and_path_by_id_locked(fuse, req->newdir,
@@ -1259,8 +1106,6 @@ static int handle_rename(struct fuse* fuse, struct fuse_handler* handler,
         res = -ENOENT;
         goto lookup_error;
     }
-<<<<<<< HEAD
-=======
     if (!check_caller_access_to_name(fuse, hdr, old_parent_node, old_name, W_OK, has_rw)) {
         res = -EACCES;
         goto lookup_error;
@@ -1269,7 +1114,6 @@ static int handle_rename(struct fuse* fuse, struct fuse_handler* handler,
         res = -EACCES;
         goto lookup_error;
     }
->>>>>>> aosp/master
     child_node = lookup_child_by_name_locked(old_parent_node, old_name);
     if (!child_node || get_node_path_locked(child_node,
             old_child_path, sizeof(old_child_path)) < 0) {
@@ -1315,11 +1159,6 @@ lookup_error:
     return res;
 }
 
-<<<<<<< HEAD
-static int handle_open(struct fuse* fuse, struct fuse_handler* handler,
-        const struct fuse_in_header* hdr, const struct fuse_open_in* req)
-{
-=======
 static int open_flags_to_access_mode(int open_flags) {
     if ((open_flags & O_ACCMODE) == O_RDONLY) {
         return R_OK;
@@ -1335,17 +1174,13 @@ static int handle_open(struct fuse* fuse, struct fuse_handler* handler,
         const struct fuse_in_header* hdr, const struct fuse_open_in* req)
 {
     bool has_rw;
->>>>>>> aosp/master
     struct node* node;
     char path[PATH_MAX];
     struct fuse_open_out out;
     struct handle *h;
 
     pthread_mutex_lock(&fuse->lock);
-<<<<<<< HEAD
-=======
     has_rw = get_caller_has_rw_locked(fuse, hdr);
->>>>>>> aosp/master
     node = lookup_node_and_path_by_id_locked(fuse, hdr->nodeid, path, sizeof(path));
     TRACE("[%d] OPEN 0%o @ %llx (%s)\n", handler->token,
             req->flags, hdr->nodeid, node ? node->name : "?");
@@ -1354,13 +1189,10 @@ static int handle_open(struct fuse* fuse, struct fuse_handler* handler,
     if (!node) {
         return -ENOENT;
     }
-<<<<<<< HEAD
-=======
     if (!check_caller_access_to_node(fuse, hdr, node,
             open_flags_to_access_mode(req->flags), has_rw)) {
         return -EACCES;
     }
->>>>>>> aosp/master
     h = malloc(sizeof(*h));
     if (!h) {
         return -ENOMEM;
@@ -1505,12 +1337,9 @@ static int handle_opendir(struct fuse* fuse, struct fuse_handler* handler,
     if (!node) {
         return -ENOENT;
     }
-<<<<<<< HEAD
-=======
     if (!check_caller_access_to_node(fuse, hdr, node, R_OK, false)) {
         return -EACCES;
     }
->>>>>>> aosp/master
     h = malloc(sizeof(*h));
     if (!h) {
         return -ENOMEM;
@@ -1522,11 +1351,8 @@ static int handle_opendir(struct fuse* fuse, struct fuse_handler* handler,
         return -errno;
     }
     out.fh = ptr_to_id(h);
-<<<<<<< HEAD
-=======
     out.open_flags = 0;
     out.padding = 0;
->>>>>>> aosp/master
     fuse_reply(fuse, hdr->unique, &out, sizeof(out));
     return NO_STATUS;
 }
@@ -1761,8 +1587,6 @@ static void* start_handler(void* data)
     return NULL;
 }
 
-<<<<<<< HEAD
-=======
 static bool remove_str_to_int(void *key, void *value, void *context) {
     Hashmap* map = context;
     hashmapRemove(map, key);
@@ -1880,7 +1704,6 @@ static void watch_package_list(struct fuse* fuse) {
     }
 }
 
->>>>>>> aosp/master
 static int ignite_fuse(struct fuse* fuse, int num_threads)
 {
     struct fuse_handler* handlers;
@@ -1888,11 +1711,7 @@ static int ignite_fuse(struct fuse* fuse, int num_threads)
 
     handlers = malloc(num_threads * sizeof(struct fuse_handler));
     if (!handlers) {
-<<<<<<< HEAD
-        ERROR("cannot allocate storage for threads");
-=======
         ERROR("cannot allocate storage for threads\n");
->>>>>>> aosp/master
         return -ENOMEM;
     }
 
@@ -1901,18 +1720,6 @@ static int ignite_fuse(struct fuse* fuse, int num_threads)
         handlers[i].token = i;
     }
 
-<<<<<<< HEAD
-    for (i = 1; i < num_threads; i++) {
-        pthread_t thread;
-        int res = pthread_create(&thread, NULL, start_handler, &handlers[i]);
-        if (res) {
-            ERROR("failed to start thread #%d, error=%d", i, res);
-            goto quit;
-        }
-    }
-    handle_fuse_requests(&handlers[0]);
-    ERROR("terminated prematurely");
-=======
     /* When deriving permissions, this thread is used to process inotify events,
      * otherwise it becomes one of the FUSE handlers. */
     i = (fuse->derive == DERIVE_NONE) ? 1 : 0;
@@ -1932,7 +1739,6 @@ static int ignite_fuse(struct fuse* fuse, int num_threads)
     }
 
     ERROR("terminated prematurely\n");
->>>>>>> aosp/master
 
     /* don't bother killing all of the other threads or freeing anything,
      * should never get here anyhow */
@@ -1942,10 +1748,6 @@ quit:
 
 static int usage()
 {
-<<<<<<< HEAD
-    ERROR("usage: sdcard [-t<threads>] <source_path> <dest_path> <uid> <gid>\n"
-            "    -t<threads>: specify number of threads to use, default -t%d\n"
-=======
     ERROR("usage: sdcard [OPTIONS] <source_path> <dest_path>\n"
             "    -u: specify UID to run as\n"
             "    -g: specify GID to run as\n"
@@ -1954,19 +1756,13 @@ static int usage()
             "    -d: derive file permissions based on path\n"
             "    -l: derive file permissions based on legacy internal layout\n"
             "    -s: split derived permissions for pics, av\n"
->>>>>>> aosp/master
             "\n", DEFAULT_NUM_THREADS);
     return 1;
 }
 
-<<<<<<< HEAD
-static int run(const char* source_path, const char* dest_path, uid_t uid, gid_t gid,
-        int num_threads) {
-=======
 static int run(const char* source_path, const char* dest_path, uid_t uid,
         gid_t gid, gid_t write_gid, int num_threads, derive_t derive,
         bool split_perms) {
->>>>>>> aosp/master
     int fd;
     char opts[256];
     int res;
@@ -1977,11 +1773,7 @@ static int run(const char* source_path, const char* dest_path, uid_t uid,
 
     fd = open("/dev/fuse", O_RDWR);
     if (fd < 0){
-<<<<<<< HEAD
-        ERROR("cannot open fuse device (error %d)\n", errno);
-=======
         ERROR("cannot open fuse device: %s\n", strerror(errno));
->>>>>>> aosp/master
         return -1;
     }
 
@@ -1991,9 +1783,6 @@ static int run(const char* source_path, const char* dest_path, uid_t uid,
 
     res = mount("/dev/fuse", dest_path, "fuse", MS_NOSUID | MS_NODEV, opts);
     if (res < 0) {
-<<<<<<< HEAD
-        ERROR("cannot mount fuse filesystem (error %d)\n", errno);
-=======
         ERROR("cannot mount fuse filesystem: %s\n", strerror(errno));
         goto error;
     }
@@ -2001,35 +1790,22 @@ static int run(const char* source_path, const char* dest_path, uid_t uid,
     res = setgroups(sizeof(kGroups) / sizeof(kGroups[0]), kGroups);
     if (res < 0) {
         ERROR("cannot setgroups: %s\n", strerror(errno));
->>>>>>> aosp/master
         goto error;
     }
 
     res = setgid(gid);
     if (res < 0) {
-<<<<<<< HEAD
-        ERROR("cannot setgid (error %d)\n", errno);
-=======
         ERROR("cannot setgid: %s\n", strerror(errno));
->>>>>>> aosp/master
         goto error;
     }
 
     res = setuid(uid);
     if (res < 0) {
-<<<<<<< HEAD
-        ERROR("cannot setuid (error %d)\n", errno);
-        goto error;
-    }
-
-    fuse_init(&fuse, fd, source_path);
-=======
         ERROR("cannot setuid: %s\n", strerror(errno));
         goto error;
     }
 
     fuse_init(&fuse, fd, source_path, write_gid, derive, split_perms);
->>>>>>> aosp/master
 
     umask(0);
     res = ignite_fuse(&fuse, num_threads);
@@ -2049,36 +1825,6 @@ int main(int argc, char **argv)
     const char *dest_path = NULL;
     uid_t uid = 0;
     gid_t gid = 0;
-<<<<<<< HEAD
-    int num_threads = DEFAULT_NUM_THREADS;
-    int i;
-    struct rlimit rlim;
-
-    for (i = 1; i < argc; i++) {
-        char* arg = argv[i];
-        if (!strncmp(arg, "-t", 2))
-            num_threads = strtoul(arg + 2, 0, 10);
-        else if (!source_path)
-            source_path = arg;
-        else if (!dest_path)
-            dest_path = arg;
-        else if (!uid) {
-            char* endptr = NULL;
-            errno = 0;
-            uid = strtoul(arg, &endptr, 10);
-            if (*endptr != '\0' || errno != 0) {
-                ERROR("Invalid uid");
-                return usage();
-            }
-        } else if (!gid) {
-            char* endptr = NULL;
-            errno = 0;
-            gid = strtoul(arg, &endptr, 10);
-            if (*endptr != '\0' || errno != 0) {
-                ERROR("Invalid gid");
-                return usage();
-            }
-=======
     gid_t write_gid = AID_SDCARD_RW;
     int num_threads = DEFAULT_NUM_THREADS;
     derive_t derive = DERIVE_NONE;
@@ -2126,7 +1872,6 @@ int main(int argc, char **argv)
             uid = strtoul(arg, NULL, 10);
         } else if (!gid) {
             gid = strtoul(arg, NULL, 10);
->>>>>>> aosp/master
         } else {
             ERROR("too many arguments\n");
             return usage();
@@ -2149,13 +1894,10 @@ int main(int argc, char **argv)
         ERROR("number of threads must be at least 1\n");
         return usage();
     }
-<<<<<<< HEAD
-=======
     if (split_perms && derive == DERIVE_NONE) {
         ERROR("cannot split permissions without deriving\n");
         return usage();
     }
->>>>>>> aosp/master
 
     rlim.rlim_cur = 8192;
     rlim.rlim_max = 8192;
@@ -2163,10 +1905,6 @@ int main(int argc, char **argv)
         ERROR("Error setting RLIMIT_NOFILE, errno = %d\n", errno);
     }
 
-<<<<<<< HEAD
-    res = run(source_path, dest_path, uid, gid, num_threads);
-=======
     res = run(source_path, dest_path, uid, gid, write_gid, num_threads, derive, split_perms);
->>>>>>> aosp/master
     return res < 0 ? 1 : 0;
 }

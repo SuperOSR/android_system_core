@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-<<<<<<< HEAD
-=======
 #include <stddef.h>
->>>>>>> aosp/master
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -38,10 +35,7 @@
 #  endif
 #else
 #  include <cutils/android_reboot.h>
-<<<<<<< HEAD
-=======
 #  include <cutils/properties.h>
->>>>>>> aosp/master
 #endif
 
 typedef struct stinfo stinfo;
@@ -61,63 +55,7 @@ void *service_bootstrap_func(void *x)
     return 0;
 }
 
-<<<<<<< HEAD
-#if ADB_HOST
-ADB_MUTEX_DEFINE( dns_lock );
-
-static void dns_service(int fd, void *cookie)
-{
-    char *hostname = cookie;
-    struct hostent *hp;
-    unsigned zero = 0;
-
-    adb_mutex_lock(&dns_lock);
-    hp = gethostbyname(hostname);
-    free(cookie);
-    if(hp == 0) {
-        writex(fd, &zero, 4);
-    } else {
-        writex(fd, hp->h_addr, 4);
-    }
-    adb_mutex_unlock(&dns_lock);
-    adb_close(fd);
-}
-#else
-extern int recovery_mode;
-
-static void recover_service(int s, void *cookie)
-{
-    unsigned char buf[4096];
-    unsigned count = (unsigned) cookie;
-    int fd;
-
-    fd = adb_creat("/tmp/update", 0644);
-    if(fd < 0) {
-        adb_close(s);
-        return;
-    }
-
-    while(count > 0) {
-        unsigned xfer = (count > 4096) ? 4096 : count;
-        if(readx(s, buf, xfer)) break;
-        if(writex(fd, buf, xfer)) break;
-        count -= xfer;
-    }
-
-    if(count == 0) {
-        writex(s, "OKAY", 4);
-    } else {
-        writex(s, "FAIL", 4);
-    }
-    adb_close(fd);
-    adb_close(s);
-
-    fd = adb_creat("/tmp/update.begin", 0644);
-    adb_close(fd);
-}
-=======
 #if !ADB_HOST
->>>>>>> aosp/master
 
 void restart_root_service(int fd, void *cookie)
 {
@@ -177,10 +115,7 @@ void restart_usb_service(int fd, void *cookie)
 void reboot_service(int fd, void *arg)
 {
     char buf[100];
-<<<<<<< HEAD
-=======
     char property_val[PROPERTY_VALUE_MAX];
->>>>>>> aosp/master
     int pid, ret;
 
     sync();
@@ -198,13 +133,6 @@ void reboot_service(int fd, void *arg)
         waitpid(pid, &ret, 0);
     }
 
-<<<<<<< HEAD
-    ret = android_reboot(ANDROID_RB_RESTART2, 0, (char *) arg);
-    if (ret < 0) {
-        snprintf(buf, sizeof(buf), "reboot failed: %s\n", strerror(errno));
-        writex(fd, buf, strlen(buf));
-    }
-=======
     ret = snprintf(property_val, sizeof(property_val), "reboot,%s", (char *) arg);
     if (ret >= (int) sizeof(property_val)) {
         snprintf(buf, sizeof(buf), "reboot string too long. length=%d\n", ret);
@@ -218,50 +146,12 @@ void reboot_service(int fd, void *arg)
         writex(fd, buf, strlen(buf));
     }
 cleanup:
->>>>>>> aosp/master
     free(arg);
     adb_close(fd);
 }
 
 #endif
 
-<<<<<<< HEAD
-#if 0
-static void echo_service(int fd, void *cookie)
-{
-    char buf[4096];
-    int r;
-    char *p;
-    int c;
-
-    for(;;) {
-        r = adb_read(fd, buf, 4096);
-        if(r == 0) goto done;
-        if(r < 0) {
-            if(errno == EINTR) continue;
-            else goto done;
-        }
-
-        c = r;
-        p = buf;
-        while(c > 0) {
-            r = write(fd, p, c);
-            if(r > 0) {
-                c -= r;
-                p += r;
-                continue;
-            }
-            if((r < 0) && (errno == EINTR)) continue;
-            goto done;
-        }
-    }
-done:
-    close(fd);
-}
-#endif
-
-=======
->>>>>>> aosp/master
 static int create_service_thread(void (*func)(int, void *), void *cookie)
 {
     stinfo *sti;
@@ -448,13 +338,7 @@ int service_to_fd(const char *name)
                 disable_tcp_nagle(ret);
         } else {
 #if ADB_HOST
-<<<<<<< HEAD
-            adb_mutex_lock(&dns_lock);
             ret = socket_network_client(name + 1, port, SOCK_STREAM);
-            adb_mutex_unlock(&dns_lock);
-=======
-            ret = socket_network_client(name + 1, port, SOCK_STREAM);
->>>>>>> aosp/master
 #else
             return -1;
 #endif
@@ -473,25 +357,11 @@ int service_to_fd(const char *name)
         ret = socket_local_client(name + 16,
                 ANDROID_SOCKET_NAMESPACE_FILESYSTEM, SOCK_STREAM);
 #endif
-<<<<<<< HEAD
-#if ADB_HOST
-    } else if(!strncmp("dns:", name, 4)){
-        char *n = strdup(name + 4);
-        if(n == 0) return -1;
-        ret = create_service_thread(dns_service, n);
-#else /* !ADB_HOST */
-=======
 #if !ADB_HOST
->>>>>>> aosp/master
     } else if(!strncmp("dev:", name, 4)) {
         ret = unix_open(name + 4, O_RDWR);
     } else if(!strncmp(name, "framebuffer:", 12)) {
         ret = create_service_thread(framebuffer_service, 0);
-<<<<<<< HEAD
-    } else if(recovery_mode && !strncmp(name, "recover:", 8)) {
-        ret = create_service_thread(recover_service, (void*) atoi(name + 8));
-=======
->>>>>>> aosp/master
     } else if (!strncmp(name, "jdwp:", 5)) {
         ret = create_jdwp_connection_fd(atoi(name+5));
     } else if (!strncmp(name, "log:", 4)) {
@@ -527,13 +397,6 @@ int service_to_fd(const char *name)
     } else if(!strncmp(name, "usb:", 4)) {
         ret = create_service_thread(restart_usb_service, NULL);
 #endif
-<<<<<<< HEAD
-#if 0
-    } else if(!strncmp(name, "echo:", 5)){
-        ret = create_service_thread(echo_service, 0);
-#endif
-=======
->>>>>>> aosp/master
     }
     if (ret >= 0) {
         close_on_exec(ret);
@@ -568,8 +431,6 @@ static void wait_for_state(int fd, void* cookie)
     adb_close(fd);
     D("wait_for_state is done\n");
 }
-<<<<<<< HEAD
-=======
 
 static void connect_device(char* host, char* buffer, int buffer_size)
 {
@@ -688,7 +549,6 @@ static void connect_service(int fd, void* cookie)
     writex(fd, resp, strlen(resp));
     adb_close(fd);
 }
->>>>>>> aosp/master
 #endif
 
 #if ADB_HOST
@@ -722,13 +582,10 @@ asocket*  host_service_to_socket(const char*  name, const char *serial)
 
         int fd = create_service_thread(wait_for_state, sinfo);
         return create_local_socket(fd);
-<<<<<<< HEAD
-=======
     } else if (!strncmp(name, "connect:", 8)) {
         const char *host = name + 8;
         int fd = create_service_thread(connect_service, (void *)host);
         return create_local_socket(fd);
->>>>>>> aosp/master
     }
     return NULL;
 }

@@ -133,6 +133,11 @@ void service_restart(struct service *svc);
 void service_start(struct service *svc, const char *dynamic_args);
 void property_changed(const char *name, const char *value);
 
+#ifdef TARGET_BOARD_FIBER
+#define INIT_IMAGE_FILE	"/initlogo.rle"
+int load_argb8888_image(char *fn);
+#enif
+
 extern struct selabel_handle *sehandle;
 extern struct selabel_handle *sehandle_prop;
 extern int selinux_reload_policy(void);

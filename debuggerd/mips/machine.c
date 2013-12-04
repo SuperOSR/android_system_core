@@ -26,11 +26,7 @@
 
 #include <corkscrew/ptrace.h>
 
-<<<<<<< HEAD
-#include <linux/user.h>
-=======
 #include <sys/user.h>
->>>>>>> aosp/master
 
 #include "../utility.h"
 #include "../machine.h"

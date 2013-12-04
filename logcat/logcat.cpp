@@ -1,18 +1,10 @@
 // Copyright 2006 The Android Open Source Project
 
-<<<<<<< HEAD
-#include <cutils/logger.h>
-#include <cutils/logd.h>
-#include <cutils/sockets.h>
-#include <cutils/logprint.h>
-#include <cutils/event_tag_map.h>
-=======
 #include <log/logger.h>
 #include <log/logd.h>
 #include <log/logprint.h>
 #include <log/event_tag_map.h>
 #include <cutils/sockets.h>
->>>>>>> aosp/master
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -105,27 +97,22 @@ static off_t g_outByteCount = 0;
 static int g_printBinary = 0;
 static int g_devCount = 0;
 
-<<<<<<< HEAD
-#define ENABLE_KERNEL_LOG 1
-#ifdef ENABLE_KERNEL_LOG
+#ifdef TARGET_BOARD_FIBER
 static int g_printKernel = 1;
 #endif
 
-=======
->>>>>>> aosp/master
 static EventTagMap* g_eventTagMap = NULL;
 
 static int openLogFile (const char *pathname)
 {
-<<<<<<< HEAD
+#ifdef TARGET_BOARD_FIBER
     return open(g_outputFileName, O_WRONLY | O_APPEND | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+#else
+    return open(pathname, O_WRONLY | O_APPEND | O_CREAT, S_IRUSR | S_IWUSR);
+#endif
 }
 
-
-
-
-#define ENABLE_COPY_LOG
-#ifdef ENABLE_COPY_LOG
+#ifdef TARGET_BOARD_FIBER
 #include <cutils/properties.h>
 static int g_enable_auto_copy = 0;
 
@@ -191,10 +178,6 @@ static int copy_logfile(void)
     return 0;
 }
 #endif
-=======
-    return open(pathname, O_WRONLY | O_APPEND | O_CREAT, S_IRUSR | S_IWUSR);
-}
->>>>>>> aosp/master
 
 static void rotateLogs()
 {
@@ -206,15 +189,11 @@ static void rotateLogs()
     }
 
     close(g_outFD);
-<<<<<<< HEAD
-#ifdef ENABLE_COPY_LOG
+#ifdef TARGET_BOARD_FIBER
     if(g_enable_auto_copy) { 
         copy_logfile();
     }
 #endif
-=======
-
->>>>>>> aosp/master
     for (int i = g_maxRotatedLogs ; i > 0 ; i--) {
         char *file0, *file1;
 
@@ -307,9 +286,8 @@ error:
     //fprintf (stderr, "Error processing record\n");
     return;
 }
-<<<<<<< HEAD
-#ifdef ENABLE_KERNEL_LOG
 
+#ifdef TARGET_BOARD_FIBER
 #include <sys/time.h>
 int printKernelBuffer(char *buf, int count)
 {
@@ -395,9 +373,7 @@ static int initKernelLog()
     return fd;
 }
 #endif
-=======
 
->>>>>>> aosp/master
 static void chooseFirst(log_device_t* dev, log_device_t** firstdev) {
     for (*firstdev = NULL; dev != NULL; dev = dev->next) {
         if (dev->queue != NULL && (*firstdev == NULL || cmp(dev->queue, (*firstdev)->queue) < 0)) {
@@ -439,22 +415,18 @@ static void printNextEntry(log_device_t* dev) {
 
 static void readLogLines(log_device_t* devices)
 {
-<<<<<<< HEAD
-#ifdef ENABLE_KERNEL_LOG
-    int    knlfd = initKernelLog();
+#ifdef TARGET_BOARD_FIBER
+    int knlfd = initKernelLog();
 #endif
-=======
->>>>>>> aosp/master
     log_device_t* dev;
     int max = 0;
     int ret;
     int queued_lines = 0;
-<<<<<<< HEAD
+#ifdef TARGET_BOARD_FIBER
     bool sleep = true;
-=======
+#else
     bool sleep = false;
->>>>>>> aosp/master
-
+#endif
     int result;
     fd_set readset;
 
@@ -479,8 +451,7 @@ static void readLogLines(log_device_t* devices)
                 if (FD_ISSET(dev->fd, &readset)) {
                     queued_entry_t* entry = new queued_entry_t();
                     /* NOTE: driver guarantees we read exactly one full entry */
-<<<<<<< HEAD
-#ifdef ENABLE_KERNEL_LOG
+#ifdef TARGET_BOARD_FIBER
         if(g_printKernel) {
             char knl_buffer[512];
             while(1) {
@@ -497,8 +468,6 @@ static void readLogLines(log_device_t* devices)
             }
         }
 #endif					
-=======
->>>>>>> aosp/master
                     ret = read(dev->fd, entry->buf, LOGGER_ENTRY_MAX_LEN);
                     if (ret < 0) {
                         if (errno == EINTR) {
@@ -621,10 +590,9 @@ static void show_help(const char *cmd)
                     "  -f <filename>   Log to file. Default to stdout\n"
                     "  -r [<kbytes>]   Rotate log every kbytes. (16 if unspecified). Requires -f\n"
                     "  -n <count>      Sets max number of rotated logs to <count>, default 4\n"
-<<<<<<< HEAD
+#ifdef TARGET_BOARD_FIBER
                     "  -M <1,0>        Set enable copy(Move) the log to sdcard_log_path\n"
-=======
->>>>>>> aosp/master
+#endif
                     "  -v <format>     Sets the log print format, where <format> is one of:\n\n"
                     "                  brief process tag thread raw time threadtime long\n\n"
                     "  -c              clear (flush) the entire log and exit\n"
@@ -685,10 +653,9 @@ int main(int argc, char **argv)
     int clearLog = 0;
     int getLogSize = 0;
     int mode = O_RDONLY;
-<<<<<<< HEAD
+#ifdef TARGET_BOARD_FIBER
     char *log_device = strdup("/dev/"LOGGER_LOG_MAIN);
-=======
->>>>>>> aosp/master
+#endif
     const char *forceFilters = NULL;
     log_device_t* devices = NULL;
     log_device_t* dev;
@@ -709,11 +676,11 @@ int main(int argc, char **argv)
     for (;;) {
         int ret;
 
-<<<<<<< HEAD
+#ifdef TARGET_BOARD_FIBER
         ret = getopt(argc, argv, "cdt:gsQf:r::n:M:v:b:B");
-=======
+#else
         ret = getopt(argc, argv, "cdt:gsQf:r::n:v:b:B");
->>>>>>> aosp/master
+#endif
 
         if (ret < 0) {
             break;
@@ -796,11 +763,7 @@ int main(int argc, char **argv)
 
             case 'n':
                 if (!isdigit(optarg[0])) {
-<<<<<<< HEAD
                     fprintf(stderr,"Invalid parameter to -n\n");
-=======
-                    fprintf(stderr,"Invalid parameter to -r\n");
->>>>>>> aosp/master
                     android::show_help(argv[0]);
                     exit(-1);
                 }
@@ -808,7 +771,7 @@ int main(int argc, char **argv)
                 android::g_maxRotatedLogs = atoi(optarg);
             break;
 
-<<<<<<< HEAD
+#ifdef TARGET_BOARD_FIBER
             case 'M':
                 if (!isdigit(optarg[0])) {
                     fprintf(stderr,"Invalid parameter to -M\n");
@@ -818,9 +781,7 @@ int main(int argc, char **argv)
 
                 android::g_enable_auto_copy = atoi(optarg);
             break;
-
-=======
->>>>>>> aosp/master
+#endif
             case 'v':
                 err = setLogFormat (optarg);
                 if (err < 0) {
@@ -1032,19 +993,11 @@ int main(int argc, char **argv)
     if (needBinary)
         android::g_eventTagMap = android_openEventTagMap(EVENT_TAG_MAP_FILE);
 
-<<<<<<< HEAD
-#ifdef ENABLE_KERNEL_LOG
+#ifdef TARGET_BOARD_FIBER
     if (strcmp(log_device, "/dev/log/main") == 0)
         android::g_printKernel = 1;
 #endif
-=======
->>>>>>> aosp/master
     android::readLogLines(devices);
 
     return 0;
 }
-<<<<<<< HEAD
-
-
-=======
->>>>>>> aosp/master

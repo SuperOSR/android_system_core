@@ -17,13 +17,10 @@
 #ifndef __CUTILS_PROPERTIES_H
 #define __CUTILS_PROPERTIES_H
 
-<<<<<<< HEAD
-=======
 #include <sys/cdefs.h>
 #include <stddef.h>
 #include <sys/system_properties.h>
 
->>>>>>> aosp/master
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -35,13 +32,8 @@ extern "C" {
 ** WARNING: system/bionic/include/sys/system_properties.h also defines
 **          these, but with different names.  (TODO: fix that)
 */
-<<<<<<< HEAD
-#define PROPERTY_KEY_MAX   32
-#define PROPERTY_VALUE_MAX  92
-=======
 #define PROPERTY_KEY_MAX   PROP_NAME_MAX
 #define PROPERTY_VALUE_MAX  PROP_VALUE_MAX
->>>>>>> aosp/master
 
 /* property_get: returns the length of the value which will never be
 ** greater than PROPERTY_VALUE_MAX - 1 and will always be zero terminated.
@@ -58,8 +50,6 @@ int property_set(const char *key, const char *value);
     
 int property_list(void (*propfn)(const char *key, const char *value, void *cookie), void *cookie);    
 
-<<<<<<< HEAD
-=======
 #if defined(__BIONIC_FORTIFY)
 
 extern int __property_get_real(const char *, char *, const char *)
@@ -76,7 +66,6 @@ int property_get(const char *key, char *value, const char *default_value) {
 }
 
 #endif
->>>>>>> aosp/master
 
 #ifdef HAVE_SYSTEM_PROPERTY_SERVER
 /*

@@ -31,12 +31,9 @@ __BEGIN_DECLS
  * frameworks/base/include/media/AudioSystem.h
  */
 
-<<<<<<< HEAD
-=======
 /* device address used to refer to the standard remote submix */
 #define AUDIO_REMOTE_SUBMIX_DEVICE_ADDRESS "0"
 
->>>>>>> aosp/master
 typedef int audio_io_handle_t;
 
 /* Audio stream types */
@@ -52,10 +49,7 @@ typedef enum {
     AUDIO_STREAM_ENFORCED_AUDIBLE = 7, /* Sounds that cannot be muted by user and must be routed to speaker */
     AUDIO_STREAM_DTMF             = 8,
     AUDIO_STREAM_TTS              = 9,
-<<<<<<< HEAD
     AUDIO_STREAM_FM               = 10,
-=======
->>>>>>> aosp/master
 
     AUDIO_STREAM_CNT,
     AUDIO_STREAM_MAX              = AUDIO_STREAM_CNT - 1,
@@ -73,27 +67,22 @@ typedef enum {
     AUDIO_SOURCE_CAMCORDER           = 5,
     AUDIO_SOURCE_VOICE_RECOGNITION   = 6,
     AUDIO_SOURCE_VOICE_COMMUNICATION = 7,
-<<<<<<< HEAD
     AUDIO_SOURCE_REMOTE_SUBMIX       = 8, 
+#ifdef TARGET_BOARD_FIBER
     AUDIO_SOURCE_AF		             = 9,
     AUDIO_SOURCE_FM		             = 10,
+#endif
                                           /* Source for the mix to be presented remotely.      */
-=======
-    AUDIO_SOURCE_REMOTE_SUBMIX       = 8, /* Source for the mix to be presented remotely.      */
->>>>>>> aosp/master
                                           /* An example of remote presentation is Wifi Display */
                                           /*  where a dongle attached to a TV can be used to   */
                                           /*  play the mix captured by this audio source.      */
     AUDIO_SOURCE_CNT,
     AUDIO_SOURCE_MAX                 = AUDIO_SOURCE_CNT - 1,
-<<<<<<< HEAD
-=======
     AUDIO_SOURCE_HOTWORD             = 1999, /* A low-priority, preemptible audio source for
                                                 for background software hotword detection.
                                                 Same tuning as AUDIO_SOURCE_VOICE_RECOGNITION.
                                                 Used only internally to the framework. Not exposed
                                                 at the audio HAL. */
->>>>>>> aosp/master
 } audio_source_t;
 
 /* special audio session values
@@ -264,11 +253,10 @@ enum {
 
     AUDIO_CHANNEL_IN_MONO   = AUDIO_CHANNEL_IN_FRONT,
     AUDIO_CHANNEL_IN_STEREO = (AUDIO_CHANNEL_IN_LEFT | AUDIO_CHANNEL_IN_RIGHT),
+#ifdef TARGET_BOARD_FIBER
     AUDIO_CHANNEL_IN_FRONT_BACK = (AUDIO_CHANNEL_IN_FRONT | AUDIO_CHANNEL_IN_BACK),
-<<<<<<< HEAD
+#endif
     AUDIO_CHANNEL_IN_VOICE = (AUDIO_CHANNEL_IN_VOICE_UPLINK | AUDIO_CHANNEL_IN_VOICE_DNLINK),
-=======
->>>>>>> aosp/master
     AUDIO_CHANNEL_IN_ALL    = (AUDIO_CHANNEL_IN_LEFT |
                                AUDIO_CHANNEL_IN_RIGHT |
                                AUDIO_CHANNEL_IN_FRONT |
@@ -281,36 +269,26 @@ enum {
                                AUDIO_CHANNEL_IN_X_AXIS |
                                AUDIO_CHANNEL_IN_Y_AXIS |
                                AUDIO_CHANNEL_IN_Z_AXIS |
+#ifdef TARGET_BOARD_FIBER
+                               AUDIO_CHANNEL_IN_VOICE |
+#endif
                                AUDIO_CHANNEL_IN_VOICE_UPLINK |
-<<<<<<< HEAD
-                               AUDIO_CHANNEL_IN_VOICE_DNLINK|
-			                   AUDIO_CHANNEL_IN_VOICE),
-=======
                                AUDIO_CHANNEL_IN_VOICE_DNLINK),
->>>>>>> aosp/master
 };
 
 typedef uint32_t audio_channel_mask_t;
 
 typedef enum {
-<<<<<<< HEAD
     AUDIO_MODE_INVALID           = -2,
     AUDIO_MODE_CURRENT           = -1,
     AUDIO_MODE_NORMAL            = 0,
     AUDIO_MODE_RINGTONE          = 1,
     AUDIO_MODE_IN_CALL           = 2,
     AUDIO_MODE_IN_COMMUNICATION  = 3,
+#ifdef TARGET_BOARD_FIBER
     AUDIO_MODE_MODE_FACTORY_TEST = 4,
     AUDIO_MODE_FM		         = 5,
-=======
-    AUDIO_MODE_INVALID          = -2,
-    AUDIO_MODE_CURRENT          = -1,
-    AUDIO_MODE_NORMAL           = 0,
-    AUDIO_MODE_RINGTONE         = 1,
-    AUDIO_MODE_IN_CALL          = 2,
-    AUDIO_MODE_IN_COMMUNICATION = 3,
->>>>>>> aosp/master
-
+#endif
     AUDIO_MODE_CNT,
     AUDIO_MODE_MAX              = AUDIO_MODE_CNT - 1,
 } audio_mode_t;
@@ -387,11 +365,10 @@ enum {
     AUDIO_DEVICE_IN_DGTL_DOCK_HEADSET     = AUDIO_DEVICE_BIT_IN | 0x400,
     AUDIO_DEVICE_IN_USB_ACCESSORY         = AUDIO_DEVICE_BIT_IN | 0x800,
     AUDIO_DEVICE_IN_USB_DEVICE            = AUDIO_DEVICE_BIT_IN | 0x1000,
-<<<<<<< HEAD
+#ifdef TARGET_BOARD_FIBER
     AUDIO_DEVICE_IN_FM 		              = AUDIO_DEVICE_BIT_IN | 0x2000,
     AUDIO_DEVICE_IN_AF 		              = AUDIO_DEVICE_BIT_IN | 0x1000000,
-=======
->>>>>>> aosp/master
+#endif
     AUDIO_DEVICE_IN_DEFAULT               = AUDIO_DEVICE_BIT_IN | AUDIO_DEVICE_BIT_DEFAULT,
 
     AUDIO_DEVICE_IN_ALL     = (AUDIO_DEVICE_IN_COMMUNICATION |
@@ -407,11 +384,10 @@ enum {
                                AUDIO_DEVICE_IN_DGTL_DOCK_HEADSET |
                                AUDIO_DEVICE_IN_USB_ACCESSORY |
                                AUDIO_DEVICE_IN_USB_DEVICE |
-<<<<<<< HEAD
+#ifdef TARGET_BOARD_FIBER
                                AUDIO_DEVICE_IN_AF |
                                AUDIO_DEVICE_IN_FM |
-=======
->>>>>>> aosp/master
+#endif
                                AUDIO_DEVICE_IN_DEFAULT),
     AUDIO_DEVICE_IN_ALL_SCO = AUDIO_DEVICE_IN_BLUETOOTH_SCO_HEADSET,
 };
@@ -438,11 +414,6 @@ typedef enum {
                                         // controls related to voice calls.
     AUDIO_OUTPUT_FLAG_FAST = 0x4,       // output supports "fast tracks",
                                         // defined elsewhere
-<<<<<<< HEAD
-    AUDIO_OUTPUT_FLAG_DEEP_BUFFER = 0x8 // use deep audio buffers
-} audio_output_flags_t;
-
-=======
     AUDIO_OUTPUT_FLAG_DEEP_BUFFER = 0x8, // use deep audio buffers
     AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD = 0x10,  // offload playback of compressed
                                                 // streams to hardware codec
@@ -488,7 +459,6 @@ static const audio_offload_info_t AUDIO_INFO_INITIALIZER = {
     size: sizeof(audio_offload_info_t),
 };
 
->>>>>>> aosp/master
 static inline bool audio_is_output_device(audio_devices_t device)
 {
     if (((device & AUDIO_DEVICE_BIT_IN) == 0) &&
@@ -542,43 +512,25 @@ static inline bool audio_is_usb_device(audio_devices_t device)
 
 static inline bool audio_is_remote_submix_device(audio_devices_t device)
 {
-<<<<<<< HEAD
-    if ((popcount(device) == 1) && (device & AUDIO_DEVICE_OUT_REMOTE_SUBMIX))
-=======
     if ((device & AUDIO_DEVICE_OUT_REMOTE_SUBMIX) == AUDIO_DEVICE_OUT_REMOTE_SUBMIX
             || (device & AUDIO_DEVICE_IN_REMOTE_SUBMIX) == AUDIO_DEVICE_IN_REMOTE_SUBMIX)
->>>>>>> aosp/master
         return true;
     else
         return false;
 }
 
-<<<<<<< HEAD
-static inline bool audio_is_input_channel(uint32_t channel)
-{
-    if ((channel & ~AUDIO_CHANNEL_IN_ALL) == 0)
-        return true;
-=======
 static inline bool audio_is_input_channel(audio_channel_mask_t channel)
 {
     if ((channel & ~AUDIO_CHANNEL_IN_ALL) == 0)
         return channel != 0;
->>>>>>> aosp/master
     else
         return false;
 }
 
-<<<<<<< HEAD
-static inline bool audio_is_output_channel(uint32_t channel)
-{
-    if ((channel & ~AUDIO_CHANNEL_OUT_ALL) == 0)
-        return true;
-=======
 static inline bool audio_is_output_channel(audio_channel_mask_t channel)
 {
     if ((channel & ~AUDIO_CHANNEL_OUT_ALL) == 0)
         return channel != 0;
->>>>>>> aosp/master
     else
         return false;
 }

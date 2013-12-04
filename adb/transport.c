@@ -32,14 +32,11 @@ static atransport transport_list = {
     .prev = &transport_list,
 };
 
-<<<<<<< HEAD
-=======
 static atransport pending_list = {
     .next = &pending_list,
     .prev = &pending_list,
 };
 
->>>>>>> aosp/master
 ADB_MUTEX_DEFINE( transport_lock );
 
 #if ADB_TRACE
@@ -653,16 +650,11 @@ static void transport_registration_func(int _fd, unsigned ev, void *data)
         }
     }
 
-<<<<<<< HEAD
-        /* put us on the master device list */
-    adb_mutex_lock(&transport_lock);
-=======
     adb_mutex_lock(&transport_lock);
     /* remove from pending list */
     t->next->prev = t->prev;
     t->prev->next = t->next;
     /* put us on the master device list */
->>>>>>> aosp/master
     t->next = &transport_list;
     t->prev = transport_list.prev;
     t->next->prev = t;
@@ -1005,16 +997,10 @@ void close_usb_devices()
 }
 #endif // ADB_HOST
 
-<<<<<<< HEAD
-void register_socket_transport(int s, const char *serial, int port, int local)
-{
-    atransport *t = calloc(1, sizeof(atransport));
-=======
 int register_socket_transport(int s, const char *serial, int port, int local)
 {
     atransport *t = calloc(1, sizeof(atransport));
     atransport *n;
->>>>>>> aosp/master
     char buff[32];
 
     if (!serial) {
@@ -1022,17 +1008,6 @@ int register_socket_transport(int s, const char *serial, int port, int local)
         serial = buff;
     }
     D("transport: %s init'ing for socket %d, on port %d\n", serial, s, port);
-<<<<<<< HEAD
-    if ( init_socket_transport(t, s, port, local) < 0 ) {
-        adb_close(s);
-        free(t);
-        return;
-    }
-    if(serial) {
-        t->serial = strdup(serial);
-    }
-    register_transport(t);
-=======
     if (init_socket_transport(t, s, port, local) < 0) {
         free(t);
         return -1;
@@ -1064,7 +1039,6 @@ int register_socket_transport(int s, const char *serial, int port, int local)
 
     register_transport(t);
     return 0;
->>>>>>> aosp/master
 }
 
 #if ADB_HOST
@@ -1134,8 +1108,6 @@ void register_usb_transport(usb_handle *usb, const char *serial, const char *dev
     if(devpath) {
         t->devpath = strdup(devpath);
     }
-<<<<<<< HEAD
-=======
 
     adb_mutex_lock(&transport_lock);
     t->next = &pending_list;
@@ -1144,7 +1116,6 @@ void register_usb_transport(usb_handle *usb, const char *serial, const char *dev
     t->prev->next = t;
     adb_mutex_unlock(&transport_lock);
 
->>>>>>> aosp/master
     register_transport(t);
 }
 

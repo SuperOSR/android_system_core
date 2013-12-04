@@ -56,7 +56,8 @@ void get_p2p_interface_replacement(const char *interface, char *p2p_interface) {
         strncpy(p2p_interface, interface, MAX_INTERFACE_LENGTH);
     }
 }
-<<<<<<< HEAD
+
+#ifdef TARGET_BOARD_FIBER
 /*
  * ethernet interface names behave as p2p.
  * eth_ethx,prefix must be eth_ set by EthernetStateTracker
@@ -70,8 +71,7 @@ int get_eth_interface_replacement(const char *interface, char *eth_interface) {
     }
     return 0;
 }
-=======
->>>>>>> aosp/master
+#endif
 
 /*
  * Wait for a system property to be assigned a specified value.
@@ -108,12 +108,8 @@ static int fill_ip_info(const char *interface,
                      char *server,
                      uint32_t *lease,
                      char *vendorInfo,
-<<<<<<< HEAD
-                     char *domain)
-=======
                      char *domain,
                      char *mtu)
->>>>>>> aosp/master
 {
     char prop_name[PROPERTY_KEY_MAX];
     char prop_value[PROPERTY_VALUE_MAX];
@@ -179,13 +175,10 @@ static int fill_ip_info(const char *interface,
             p2p_interface);
     property_get(prop_name, domain, NULL);
 
-<<<<<<< HEAD
-=======
     snprintf(prop_name, sizeof(prop_name), "%s.%s.mtu", DHCP_PROP_NAME_PREFIX,
             p2p_interface);
     property_get(prop_name, mtu, NULL);
 
->>>>>>> aosp/master
     return 0;
 }
 
@@ -214,12 +207,8 @@ int dhcp_do_request(const char *interface,
                     char *server,
                     uint32_t *lease,
                     char *vendorInfo,
-<<<<<<< HEAD
-                    char *domain)
-=======
                     char *domain,
                     char *mtu)
->>>>>>> aosp/master
 {
     char result_prop_name[PROPERTY_KEY_MAX];
     char daemon_prop_name[PROPERTY_KEY_MAX];
@@ -232,20 +221,16 @@ int dhcp_do_request(const char *interface,
 
     get_p2p_interface_replacement(interface, p2p_interface);
 
-<<<<<<< HEAD
+#ifdef TARGET_BOARD_FIBER
     if(get_eth_interface_replacement(interface, p2p_interface)) {
         snprintf(result_prop_name, sizeof(result_prop_name), "%s.%s.result",
                 DHCP_PROP_NAME_PREFIX,
                 interface);
     } else
+#endif
         snprintf(result_prop_name, sizeof(result_prop_name), "%s.%s.result",
                 DHCP_PROP_NAME_PREFIX,
                 p2p_interface);
-=======
-    snprintf(result_prop_name, sizeof(result_prop_name), "%s.%s.result",
-            DHCP_PROP_NAME_PREFIX,
-            p2p_interface);
->>>>>>> aosp/master
 
     snprintf(daemon_prop_name, sizeof(daemon_prop_name), "%s_%s",
             DAEMON_PROP_NAME,
@@ -282,11 +267,7 @@ int dhcp_do_request(const char *interface,
     if (strcmp(prop_value, "ok") == 0) {
         char dns_prop_name[PROPERTY_KEY_MAX];
         if (fill_ip_info(interface, ipaddr, gateway, prefixLength, dns,
-<<<<<<< HEAD
-                server, lease, vendorInfo, domain) == -1) {
-=======
                 server, lease, vendorInfo, domain, mtu) == -1) {
->>>>>>> aosp/master
             return -1;
         }
         return 0;
@@ -311,24 +292,16 @@ int dhcp_stop(const char *interface)
 
     get_p2p_interface_replacement(interface, p2p_interface);
 
-<<<<<<< HEAD
+#ifdef TARGET_BOARD_FIBER
     if(get_eth_interface_replacement(interface, p2p_interface)) {
         snprintf(result_prop_name, sizeof(result_prop_name), "%s.%s.result",
                 DHCP_PROP_NAME_PREFIX,
                 interface);
     } else
+#endif
         snprintf(result_prop_name, sizeof(result_prop_name), "%s.%s.result",
                 DHCP_PROP_NAME_PREFIX,
                 p2p_interface);
-=======
-    snprintf(result_prop_name, sizeof(result_prop_name), "%s.%s.result",
-            DHCP_PROP_NAME_PREFIX,
-            p2p_interface);
->>>>>>> aosp/master
-
-    snprintf(daemon_prop_name, sizeof(daemon_prop_name), "%s_%s",
-            DAEMON_PROP_NAME,
-            p2p_interface);
 
     snprintf(daemon_cmd, sizeof(daemon_cmd), "%s_%s", DAEMON_NAME, p2p_interface);
 
@@ -388,12 +361,8 @@ int dhcp_do_request_renew(const char *interface,
                     char *server,
                     uint32_t *lease,
                     char *vendorInfo,
-<<<<<<< HEAD
-                    char *domain)
-=======
                     char *domain,
                     char *mtu)
->>>>>>> aosp/master
 {
     char result_prop_name[PROPERTY_KEY_MAX];
     char prop_value[PROPERTY_VALUE_MAX] = {'\0'};
@@ -430,11 +399,7 @@ int dhcp_do_request_renew(const char *interface,
     }
     if (strcmp(prop_value, "ok") == 0) {
         return fill_ip_info(interface, ipaddr, gateway, prefixLength, dns,
-<<<<<<< HEAD
-                server, lease, vendorInfo, domain);
-=======
                 server, lease, vendorInfo, domain, mtu);
->>>>>>> aosp/master
     } else {
         snprintf(errmsg, sizeof(errmsg), "DHCP Renew result was %s", prop_value);
         return -1;

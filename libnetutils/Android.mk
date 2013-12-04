@@ -8,6 +8,10 @@ LOCAL_SRC_FILES:= \
         ifc_utils.c \
         packet.c
 
+ifeq ($(TARGET_BOARD_PLATFORM), fiber)
+	LOCAL_CFLAGS += -DTARGET_BOARD_FIBER
+endif
+
 LOCAL_SHARED_LIBRARIES := \
         libcutils \
         liblog
