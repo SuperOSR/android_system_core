@@ -30,6 +30,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -104,6 +105,17 @@ static struct {
     {"recovery.img", "recovery.sig", "recovery", true},
     {"system.img", "system.sig", "system", false},
 };
+
+void die(const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    fprintf(stderr,"error: ");
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr,"\n");
+    va_end(ap);
+    exit(1);
+}
 
 void get_my_path(char *path);
 
@@ -491,13 +503,7 @@ static int setup_requirement_line(char *name)
 
     for(n = 0; n < count; n++) {
         out[n] = strdup(strip(val[n]));
-        if (out[n] == 0) {
-            for(size_t i = 0; i < n; ++i) {
-                free((char*) out[i]);
-            }
-            free(out);
-            return -1;
-        }
+        if (out[n] == 0) return -1;
     }
 
     fb_queue_require(prod, name, invert, n, out);
@@ -1096,7 +1102,6 @@ int main(int argc, char **argv)
         fb_queue_reboot();
     } else if (wants_reboot_bootloader) {
         fb_queue_command("reboot-bootloader", "rebooting into bootloader");
-        fb_queue_wait_for_disconnect();
     }
 
     if (fb_queue_is_empty())

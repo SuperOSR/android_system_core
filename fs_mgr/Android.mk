@@ -7,10 +7,6 @@ LOCAL_SRC_FILES:= fs_mgr.c fs_mgr_verity.c
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
 
-ifeq ($(TARGET_BOARD_PLATFORM), fiber)
-	LOCAL_CFLAGS += -DTARGET_BOARD_FIBER
-endif
-
 LOCAL_MODULE:= libfs_mgr
 LOCAL_STATIC_LIBRARIES := liblogwrap libmincrypt libext4_utils_static
 LOCAL_C_INCLUDES += system/extras/ext4_utils

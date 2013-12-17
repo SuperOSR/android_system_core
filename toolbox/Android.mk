@@ -89,10 +89,6 @@ LOCAL_SRC_FILES := \
 
 LOCAL_C_INCLUDES := bionic/libc/bionic
 
-ifeq ($(TARGET_BOARD_PLATFORM), fiber)
-	LOCAL_CFLAGS += -DTARGET_BOARD_FIBER
-endif
-
 LOCAL_SHARED_LIBRARIES := \
 	libcutils \
 	liblog \

@@ -124,10 +124,6 @@ ifneq (,$(filter userdebug eng,$(TARGET_BUILD_VARIANT)))
 LOCAL_CFLAGS += -DALLOW_ADBD_ROOT=1
 endif
 
-ifeq ($(TARGET_BOARD_PLATFORM), fiber)
-	LOCAL_CFLAGS += -DTARGET_BOARD_FIBER
-endif
-
 LOCAL_MODULE := adbd
 
 LOCAL_FORCE_STATIC_EXECUTABLE := true

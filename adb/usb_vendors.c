@@ -155,10 +155,7 @@
 #define VENDOR_ID_QISDA         0x1D45
 // ECS's USB Vendor ID
 #define VENDOR_ID_ECS           0x03fc
-// MSI's USB Vendor ID
-#define VENDOR_ID_MSI           0x0DB0
-// Wacom's USB Vendor ID
-#define VENDOR_ID_WACOM         0x0531
+
 
 /** built-in vendor list */
 int builtInVendorIds[] = {
@@ -222,8 +219,6 @@ int builtInVendorIds[] = {
     VENDOR_ID_NOOK,
     VENDOR_ID_QISDA,
     VENDOR_ID_ECS,
-    VENDOR_ID_MSI,
-    VENDOR_ID_WACOM,
 };
 
 #define BUILT_IN_VENDOR_COUNT    (sizeof(builtInVendorIds)/sizeof(builtInVendorIds[0]))
