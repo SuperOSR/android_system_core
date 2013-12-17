@@ -33,7 +33,6 @@
 #include <selinux/selinux.h>
 #include <selinux/label.h>
 #include <selinux/android.h>
-#include <selinux/avc.h>
 
 #include <private/android_filesystem_config.h>
 #include <sys/time.h>
@@ -44,7 +43,6 @@
 #include <cutils/uevent.h>
 
 #include "devices.h"
-#include "ueventd_parser.h"
 #include "util.h"
 #include "log.h"
 
@@ -531,11 +529,8 @@ static const char *parse_device_name(struct uevent *uevent, unsigned int len)
     name++;
 
     /* too-long names would overrun our buffer */
-    if(strlen(name) > len) {
-        ERROR("DEVPATH=%s exceeds %u-character limit on filename; ignoring event\n",
-                name, len);
+    if(strlen(name) > len)
         return NULL;
-    }
 
     return name;
 }
@@ -561,76 +556,37 @@ static void handle_block_device_event(struct uevent *uevent)
             uevent->major, uevent->minor, links);
 }
 
-#define DEVPATH_LEN 96
-
-static bool assemble_devpath(char *devpath, const char *dirname,
-        const char *devname)
-{
-    int s = snprintf(devpath, DEVPATH_LEN, "%s/%s", dirname, devname);
-    if (s < 0) {
-        ERROR("failed to assemble device path (%s); ignoring event\n",
-                strerror(errno));
-        return false;
-    } else if (s >= DEVPATH_LEN) {
-        ERROR("%s/%s exceeds %u-character limit on path; ignoring event\n",
-                dirname, devname, DEVPATH_LEN);
-        return false;
-    }
-    return true;
-}
-
-static void mkdir_recursive_for_devpath(const char *devpath)
-{
-    char dir[DEVPATH_LEN];
-    char *slash;
-
-    strcpy(dir, devpath);
-    slash = strrchr(dir, '/');
-    *slash = '\0';
-    mkdir_recursive(dir, 0755);
-}
-
 static void handle_generic_device_event(struct uevent *uevent)
 {
     char *base;
     const char *name;
-    char devpath[DEVPATH_LEN] = {0};
+    char devpath[96] = {0};
     char **links = NULL;
 
     name = parse_device_name(uevent, 64);
     if (!name)
         return;
 
-    struct ueventd_subsystem *subsystem =
-            ueventd_subsystem_find_by_name(uevent->subsystem);
-
-    if (subsystem) {
-        const char *devname;
-
-        switch (subsystem->devname_src) {
-        case DEVNAME_UEVENT_DEVNAME:
-            devname = uevent->device_name;
-            break;
-
-        case DEVNAME_UEVENT_DEVPATH:
-            devname = name;
-            break;
-
-        default:
-            ERROR("%s subsystem's devpath option is not set; ignoring event\n",
-                    uevent->subsystem);
-            return;
-        }
-
-        if (!assemble_devpath(devpath, subsystem->dirname, devname))
-            return;
-        mkdir_recursive_for_devpath(devpath);
-    } else if (!strncmp(uevent->subsystem, "usb", 3)) {
+    if (!strncmp(uevent->subsystem, "usb", 3)) {
          if (!strcmp(uevent->subsystem, "usb")) {
             if (uevent->device_name) {
-                if (!assemble_devpath(devpath, "/dev", uevent->device_name))
-                    return;
-                mkdir_recursive_for_devpath(devpath);
+                /*
+                 * create device node provided by kernel if present
+                 * see drivers/base/core.c
+                 */
+                char *p = devpath;
+                snprintf(devpath, sizeof(devpath), "/dev/%s", uevent->device_name);
+                /* skip leading /dev/ */
+                p += 5;
+                /* build directories */
+                while (*p) {
+                    if (*p == '/') {
+                        *p = 0;
+                        make_dir(devpath, 0755);
+                        *p = '/';
+                    }
+                    p++;
+                }
              }
              else {
                  /* This imitates the file system that would be created
@@ -874,15 +830,6 @@ void handle_device_fd()
         struct uevent uevent;
         parse_event(msg, &uevent);
 
-        if (sehandle && selinux_status_updated() > 0) {
-            struct selabel_handle *sehandle2;
-            sehandle2 = selinux_android_file_context_handle();
-            if (sehandle2) {
-                selabel_close(sehandle);
-                sehandle = sehandle2;
-            }
-        }
-
         handle_device_event(&uevent);
         handle_firmware_event(&uevent);
     }
@@ -949,7 +896,6 @@ void device_init(void)
     sehandle = NULL;
     if (is_selinux_enabled() > 0) {
         sehandle = selinux_android_file_context_handle();
-        selinux_status_open(true);
     }
 
     /* is 256K enough? udev uses 16MB! */

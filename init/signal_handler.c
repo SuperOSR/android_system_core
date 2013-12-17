@@ -57,15 +57,7 @@ static int wait_for_one_process(int block)
 
     svc = service_find_by_pid(pid);
     if (!svc) {
-        if (WIFEXITED(status)) {
-            ERROR("untracked pid %d exited with status %d\n", pid, WEXITSTATUS(status));
-        } else if (WIFSIGNALED(status)) {
-            ERROR("untracked pid %d killed by signal %d\n", pid, WTERMSIG(status));
-        } else if (WIFSTOPPED(status)) {
-            ERROR("untracked pid %d stopped by signal %d\n", pid, WSTOPSIG(status));
-        } else {
-            ERROR("untracked pid %d state changed\n", pid);
-        }
+        ERROR("untracked pid %d exited\n", pid);
         return 0;
     }
 

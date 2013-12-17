@@ -97,87 +97,12 @@ static off_t g_outByteCount = 0;
 static int g_printBinary = 0;
 static int g_devCount = 0;
 
-#ifdef TARGET_BOARD_FIBER
-static int g_printKernel = 1;
-#endif
-
 static EventTagMap* g_eventTagMap = NULL;
 
 static int openLogFile (const char *pathname)
 {
-#ifdef TARGET_BOARD_FIBER
-    return open(g_outputFileName, O_WRONLY | O_APPEND | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
-#else
     return open(pathname, O_WRONLY | O_APPEND | O_CREAT, S_IRUSR | S_IWUSR);
-#endif
 }
-
-#ifdef TARGET_BOARD_FIBER
-#include <cutils/properties.h>
-static int g_enable_auto_copy = 0;
-
-static int copy_logfile(void)
-{
-       
-    FILE *fp1 = NULL, *fp2 = NULL;
-    char *f_src = NULL, *f_dest = NULL;
-    char buf[4096];
-    char tmbuf[64];
-    struct timespec ts;
-    struct tm *ptm = NULL;
-    char value[PROPERTY_VALUE_MAX];
-    int nr = 0, nw = 0;
-    char *sdcard_log_path = NULL;
-    
-    property_get("ro.secure", value, ""); 
-    if (!(access("/sdcard", W_OK | R_OK | F_OK) == 0  && 
-                            strcmp(value, "0") == 0)){
-        return -1;                                               
-    }
-    
-    sdcard_log_path = getenv("SD_LOG_PATH");   
-    if (sdcard_log_path == NULL){
-        sdcard_log_path = "/sdcard/log";
-    }
-
-    for (int i = g_maxRotatedLogs; i >= 0; i--) {
-        if (i > 0) {
-            asprintf(&f_src, "%s.%d", g_outputFileName, i);
-        } else {
-            asprintf(&f_src, "%s", g_outputFileName);
-        }
-        if (access(f_src, R_OK | F_OK) ==0) {
-            if ((fp1 = fopen(f_src, "rb")) != NULL) {
-                clock_gettime(CLOCK_REALTIME,&ts);
-                ptm = localtime(&ts.tv_sec);
-                strftime(tmbuf, sizeof(tmbuf), "%y%m%d-%H%M%S", ptm);
-                asprintf(&f_dest, "%s/%s.%s.%03ld", sdcard_log_path, 
-                                strrchr(g_outputFileName, '/')+1, 
-                                tmbuf, ts.tv_nsec/1000000);
-                                                               	
-                if ((fp2 = fopen(f_dest, "wb")) != NULL) {
-                    while ((nr = fread(buf, 1, 4096, fp1)) > 0) {
-                        nw = fwrite(buf, 1, nr, fp2);
-                        if (nw < 0){
-                            continue;
-                        }
-                    }
-                
-                    fclose(fp2);
-                }           
-                fclose(fp1);
-                free(f_dest);
-            }
-            if(remove(f_src) < 0 ){
-                perror("couldn't remove file");
-                continue;
-            }
-        }
-        free(f_src);
-    }
-    return 0;
-}
-#endif
 
 static void rotateLogs()
 {
@@ -189,11 +114,7 @@ static void rotateLogs()
     }
 
     close(g_outFD);
-#ifdef TARGET_BOARD_FIBER
-    if(g_enable_auto_copy) { 
-        copy_logfile();
-    }
-#endif
+
     for (int i = g_maxRotatedLogs ; i > 0 ; i--) {
         char *file0, *file1;
 
@@ -287,93 +208,6 @@ error:
     return;
 }
 
-#ifdef TARGET_BOARD_FIBER
-#include <sys/time.h>
-int printKernelBuffer(char *buf, int count)
-{
-    static android_LogPriority last_prio = ANDROID_LOG_INFO;
-    int bytesWritten = 0;
-    AndroidLogEntry entry;
-    char tag[10]="Kernel";
-    int prio = 0;
-    char *buffer = buf;
-    char *next = NULL;
-    struct timespec ts;
-
-    // kernel log won't be written to STDOUT
-    if (g_outFD == STDOUT_FILENO) {
-        return 0;
-    }
-
-    while (buffer < (buf + count)) {
-
-        if (buffer[0] != '<') {
-            next = strchr(buffer, '<');
-            if(next == NULL)
-                next = buf + count;
-
-            entry.priority = last_prio;
-        } else {
-   
-            if (sscanf(buffer, "<%d>", &prio) < 0)
-                break;
-
-            next = strchr(buffer, '\n');
-            if (next == NULL)
-                next = buf + count;
-            else
-                next++;
-
-            if (prio < 2)
-                entry.priority = ANDROID_LOG_FATAL;
-            else if (prio == 3)
-                entry.priority = ANDROID_LOG_ERROR;
-            else if (prio == 4)
-                entry.priority = ANDROID_LOG_WARN;
-            else if (prio == 5 || prio == 6)
-                entry.priority = ANDROID_LOG_INFO;
-            else if (prio == 7)
-                entry.priority = ANDROID_LOG_DEBUG;
-            else
-                entry.priority = last_prio;
-    
-        }
-
-        last_prio = entry.priority;
-
-        clock_gettime(CLOCK_REALTIME, &ts);
-        entry.tv_sec  = ts.tv_sec;
-        entry.tv_nsec = ts.tv_nsec;
-        entry.pid = 0;
-        entry.tid = 0;
-        entry.tag = tag;
-        entry.messageLen =  next - buffer;
-        entry.message = buffer;
-
-        bytesWritten += android_log_printLogLine(
-                            g_logformat, g_outFD, &entry);
-        buffer = next;
-    }
-
-    g_outByteCount += bytesWritten;
-
-    if (g_logRotateSizeKBytes > 0
-            && (g_outByteCount / 1024) >= g_logRotateSizeKBytes)
-        rotateLogs();
-
-    return bytesWritten; 
-}
-
-#define KERNEL_LOG_SOURCE	"/proc/kmsg"
-static int initKernelLog()
-{
-    int fd = open(KERNEL_LOG_SOURCE, O_RDONLY | O_NONBLOCK);
-    if(fd < 0)
-        perror("open "KERNEL_LOG_SOURCE" failed");
-    return fd;
-}
-#endif
-
 static void chooseFirst(log_device_t* dev, log_device_t** firstdev) {
     for (*firstdev = NULL; dev != NULL; dev = dev->next) {
         if (dev->queue != NULL && (*firstdev == NULL || cmp(dev->queue, (*firstdev)->queue) < 0)) {
@@ -415,18 +249,12 @@ static void printNextEntry(log_device_t* dev) {
 
 static void readLogLines(log_device_t* devices)
 {
-#ifdef TARGET_BOARD_FIBER
-    int knlfd = initKernelLog();
-#endif
     log_device_t* dev;
     int max = 0;
     int ret;
     int queued_lines = 0;
-#ifdef TARGET_BOARD_FIBER
-    bool sleep = true;
-#else
     bool sleep = false;
-#endif
+
     int result;
     fd_set readset;
 
@@ -451,23 +279,6 @@ static void readLogLines(log_device_t* devices)
                 if (FD_ISSET(dev->fd, &readset)) {
                     queued_entry_t* entry = new queued_entry_t();
                     /* NOTE: driver guarantees we read exactly one full entry */
-#ifdef TARGET_BOARD_FIBER
-        if(g_printKernel) {
-            char knl_buffer[512];
-            while(1) {
-                ret = read(knlfd, knl_buffer, sizeof(knl_buffer));
-                if(ret < 0) {
-                    break;
-                }
-
-                ret = printKernelBuffer(knl_buffer, ret);
-                if(ret < 0) {
-                    perror("Kernel log output error");
-                    break;
-                }
-            }
-        }
-#endif					
                     ret = read(dev->fd, entry->buf, LOGGER_ENTRY_MAX_LEN);
                     if (ret < 0) {
                         if (errno == EINTR) {
@@ -590,9 +401,6 @@ static void show_help(const char *cmd)
                     "  -f <filename>   Log to file. Default to stdout\n"
                     "  -r [<kbytes>]   Rotate log every kbytes. (16 if unspecified). Requires -f\n"
                     "  -n <count>      Sets max number of rotated logs to <count>, default 4\n"
-#ifdef TARGET_BOARD_FIBER
-                    "  -M <1,0>        Set enable copy(Move) the log to sdcard_log_path\n"
-#endif
                     "  -v <format>     Sets the log print format, where <format> is one of:\n\n"
                     "                  brief process tag thread raw time threadtime long\n\n"
                     "  -c              clear (flush) the entire log and exit\n"
@@ -653,9 +461,6 @@ int main(int argc, char **argv)
     int clearLog = 0;
     int getLogSize = 0;
     int mode = O_RDONLY;
-#ifdef TARGET_BOARD_FIBER
-    char *log_device = strdup("/dev/"LOGGER_LOG_MAIN);
-#endif
     const char *forceFilters = NULL;
     log_device_t* devices = NULL;
     log_device_t* dev;
@@ -676,11 +481,7 @@ int main(int argc, char **argv)
     for (;;) {
         int ret;
 
-#ifdef TARGET_BOARD_FIBER
-        ret = getopt(argc, argv, "cdt:gsQf:r::n:M:v:b:B");
-#else
         ret = getopt(argc, argv, "cdt:gsQf:r::n:v:b:B");
-#endif
 
         if (ret < 0) {
             break;
@@ -763,7 +564,7 @@ int main(int argc, char **argv)
 
             case 'n':
                 if (!isdigit(optarg[0])) {
-                    fprintf(stderr,"Invalid parameter to -n\n");
+                    fprintf(stderr,"Invalid parameter to -r\n");
                     android::show_help(argv[0]);
                     exit(-1);
                 }
@@ -771,17 +572,6 @@ int main(int argc, char **argv)
                 android::g_maxRotatedLogs = atoi(optarg);
             break;
 
-#ifdef TARGET_BOARD_FIBER
-            case 'M':
-                if (!isdigit(optarg[0])) {
-                    fprintf(stderr,"Invalid parameter to -M\n");
-                    android::show_help(argv[0]);
-                    exit(-1);
-                }
-
-                android::g_enable_auto_copy = atoi(optarg);
-            break;
-#endif
             case 'v':
                 err = setLogFormat (optarg);
                 if (err < 0) {
@@ -993,10 +783,6 @@ int main(int argc, char **argv)
     if (needBinary)
         android::g_eventTagMap = android_openEventTagMap(EVENT_TAG_MAP_FILE);
 
-#ifdef TARGET_BOARD_FIBER
-    if (strcmp(log_device, "/dev/log/main") == 0)
-        android::g_printKernel = 1;
-#endif
     android::readLogLines(devices);
 
     return 0;

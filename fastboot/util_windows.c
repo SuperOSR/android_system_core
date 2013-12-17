@@ -46,3 +46,4 @@ void get_my_path(char exe[PATH_MAX])
 	if (r)
 		*r = 0;
 }
+

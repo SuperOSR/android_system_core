@@ -50,16 +50,9 @@
 #endif
 #include <asm/byteorder.h>
 
-#include "fastboot.h"
 #include "usb.h"
 
 #define MAX_RETRIES 5
-
-/* Timeout in seconds for usb_wait_for_disconnect.
- * It doesn't usually take long for a device to disconnect (almost always
- * under 2 seconds) but we'll time out after 3 seconds just in case.
- */
-#define WAIT_FOR_DISCONNECT_TIMEOUT  3
 
 #ifdef TRACE_USB
 #define DBG1(x...) fprintf(stderr, x)
@@ -82,18 +75,10 @@ struct usb_handle
     unsigned char ep_out;
 };
 
-/* True if name isn't a valid name for a USB device in /sys/bus/usb/devices.
- * Device names are made up of numbers, dots, and dashes, e.g., '7-1.5'.
- * We reject interfaces (e.g., '7-1.5:1.0') and host controllers (e.g. 'usb1').
- * The name must also start with a digit, to disallow '.' and '..'
- */
 static inline int badname(const char *name)
 {
-    if (!isdigit(*name))
-      return 1;
-    while(*++name) {
-        if(!isdigit(*name) && *name != '.' && *name != '-')
-            return 1;
+    while(*name) {
+        if(!isdigit(*name++)) return 1;
     }
     return 0;
 }
@@ -110,8 +95,7 @@ static int check(void *_desc, int len, unsigned type, int size)
     return 0;
 }
 
-static int filter_usb_device(char* sysfs_name,
-                             char *ptr, int len, int writable,
+static int filter_usb_device(int fd, char *ptr, int len, int writable,
                              ifc_match_func callback,
                              int *ept_in_id, int *ept_out_id, int *ifc_id)
 {
@@ -147,35 +131,69 @@ static int filter_usb_device(char* sysfs_name,
     info.dev_protocol = dev->bDeviceProtocol;
     info.writable = writable;
 
-    snprintf(info.device_path, sizeof(info.device_path), "usb:%s", sysfs_name);
-
-    /* Read device serial number (if there is one).
-     * We read the serial number from sysfs, since it's faster and more
-     * reliable than issuing a control pipe read, and also won't
-     * cause problems for devices which don't like getting descriptor
-     * requests while they're in the middle of flashing.
-     */
-    info.serial_number[0] = '\0';
+    // read device serial number (if there is one)
+    info.serial_number[0] = 0;
     if (dev->iSerialNumber) {
-        char path[80];
-        int fd;
+        struct usbdevfs_ctrltransfer  ctrl;
+        // Keep it short enough because some bootloaders are borked if the URB len is > 255
+        // 128 is too big by 1.
+        __u16 buffer[127];
 
-        snprintf(path, sizeof(path),
-                 "/sys/bus/usb/devices/%s/serial", sysfs_name);
-        path[sizeof(path) - 1] = '\0';
+        memset(buffer, 0, sizeof(buffer));
 
-        fd = open(path, O_RDONLY);
-        if (fd >= 0) {
-            int chars_read = read(fd, info.serial_number,
-                                  sizeof(info.serial_number) - 1);
-            close(fd);
+        ctrl.bRequestType = USB_DIR_IN|USB_TYPE_STANDARD|USB_RECIP_DEVICE;
+        ctrl.bRequest = USB_REQ_GET_DESCRIPTOR;
+        ctrl.wValue = (USB_DT_STRING << 8) | dev->iSerialNumber;
+        //language ID (en-us) for serial number string
+        ctrl.wIndex = 0x0409;
+        ctrl.wLength = sizeof(buffer);
+        ctrl.data = buffer;
+        ctrl.timeout = 50;
 
-            if (chars_read <= 0)
-                info.serial_number[0] = '\0';
-            else if (info.serial_number[chars_read - 1] == '\n') {
-                // strip trailing newline
-                info.serial_number[chars_read - 1] = '\0';
-            }
+        result = ioctl(fd, USBDEVFS_CONTROL, &ctrl);
+        if (result > 0) {
+            int i;
+            // skip first word, and copy the rest to the serial string, changing shorts to bytes.
+            result /= 2;
+            for (i = 1; i < result; i++)
+                info.serial_number[i - 1] = buffer[i];
+            info.serial_number[i - 1] = 0;
+        }
+    }
+
+    /* We need to get a path that represents a particular port on a particular
+     * hub.  We are passed an fd that was obtained by opening an entry under
+     * /dev/bus/usb.  Unfortunately, the names of those entries change each
+     * time devices are plugged and unplugged.  So how to get a repeatable
+     * path?  udevadm provided the inspiration.  We can get the major and
+     * minor of the device file, read the symlink that can be found here:
+     *   /sys/dev/char/<major>:<minor>
+     * and then use the last element of that path.  As a concrete example, I
+     * have an Android device at /dev/bus/usb/001/027 so working with bash:
+     *   $ ls -l /dev/bus/usb/001/027
+     *   crw-rw-r-- 1 root plugdev 189, 26 Apr  9 11:03 /dev/bus/usb/001/027
+     *   $ ls -l /sys/dev/char/189:26
+     *   lrwxrwxrwx 1 root root 0 Apr  9 11:03 /sys/dev/char/189:26 ->
+     *           ../../devices/pci0000:00/0000:00:1a.7/usb1/1-4/1-4.2/1-4.2.3
+     * So our device_path would be 1-4.2.3 which says my device is connected
+     * to port 3 of a hub on port 2 of a hub on port 4 of bus 1 (per
+     * http://www.linux-usb.org/FAQ.html).
+     */
+    info.device_path[0] = '\0';
+    result = fstat(fd, &st);
+    if (!result && S_ISCHR(st.st_mode)) {
+        char cdev[128];
+        char link[256];
+        char *slash;
+        ssize_t link_len;
+        snprintf(cdev, sizeof(cdev), "/sys/dev/char/%d:%d",
+                 major(st.st_rdev), minor(st.st_rdev));
+        link_len = readlink(cdev, link, sizeof(link) - 1);
+        if (link_len > 0) {
+            link[link_len] = '\0';
+            slash = strrchr(link, '/');
+            if (slash)
+                snprintf(info.device_path, sizeof(info.device_path), "usb:%s", slash+1);
         }
     }
 
@@ -223,73 +241,14 @@ static int filter_usb_device(char* sysfs_name,
     return -1;
 }
 
-static int read_sysfs_string(const char *sysfs_name, const char *sysfs_node,
-                             char* buf, int bufsize)
-{
-    char path[80];
-    int fd, n;
-
-    snprintf(path, sizeof(path),
-             "/sys/bus/usb/devices/%s/%s", sysfs_name, sysfs_node);
-    path[sizeof(path) - 1] = '\0';
-
-    fd = open(path, O_RDONLY);
-    if (fd < 0)
-        return -1;
-
-    n = read(fd, buf, bufsize - 1);
-    close(fd);
-
-    if (n < 0)
-        return -1;
-
-    buf[n] = '\0';
-
-    return n;
-}
-
-static int read_sysfs_number(const char *sysfs_name, const char *sysfs_node)
-{
-    char buf[16];
-    int value;
-
-    if (read_sysfs_string(sysfs_name, sysfs_node, buf, sizeof(buf)) < 0)
-        return -1;
-
-    if (sscanf(buf, "%d", &value) != 1)
-        return -1;
-
-    return value;
-}
-
-/* Given the name of a USB device in sysfs, get the name for the same
- * device in devfs. Returns 0 for success, -1 for failure.
- */
-static int convert_to_devfs_name(const char* sysfs_name,
-                                 char* devname, int devname_size)
-{
-    int busnum, devnum;
-
-    busnum = read_sysfs_number(sysfs_name, "busnum");
-    if (busnum < 0)
-        return -1;
-
-    devnum = read_sysfs_number(sysfs_name, "devnum");
-    if (devnum < 0)
-        return -1;
-
-    snprintf(devname, devname_size, "/dev/bus/usb/%03d/%03d", busnum, devnum);
-    return 0;
-}
-
 static usb_handle *find_usb_device(const char *base, ifc_match_func callback)
 {
     usb_handle *usb = 0;
-    char devname[64];
+    char busname[64], devname[64];
     char desc[1024];
     int n, in, out, ifc;
 
-    DIR *busdir;
+    DIR *busdir, *devdir;
     struct dirent *de;
     int fd;
     int writable;
@@ -300,7 +259,15 @@ static usb_handle *find_usb_device(const char *base, ifc_match_func callback)
     while((de = readdir(busdir)) && (usb == 0)) {
         if(badname(de->d_name)) continue;
 
-        if(!convert_to_devfs_name(de->d_name, devname, sizeof(devname))) {
+        sprintf(busname, "%s/%s", base, de->d_name);
+        devdir = opendir(busname);
+        if(devdir == 0) continue;
+
+//        DBG("[ scanning %s ]\n", busname);
+        while((de = readdir(devdir)) && (usb == 0)) {
+
+            if(badname(de->d_name)) continue;
+            sprintf(devname, "%s/%s", busname, de->d_name);
 
 //            DBG("[ scanning %s ]\n", devname);
             writable = 1;
@@ -315,7 +282,7 @@ static usb_handle *find_usb_device(const char *base, ifc_match_func callback)
 
             n = read(fd, desc, sizeof(desc));
 
-            if(filter_usb_device(de->d_name, desc, n, writable, callback,
+            if(filter_usb_device(fd, desc, n, writable, callback,
                                  &in, &out, &ifc) == 0) {
                 usb = calloc(1, sizeof(usb_handle));
                 strcpy(usb->fname, devname);
@@ -334,6 +301,7 @@ static usb_handle *find_usb_device(const char *base, ifc_match_func callback)
                 close(fd);
             }
         }
+        closedir(devdir);
     }
     closedir(busdir);
 
@@ -347,11 +315,26 @@ int usb_write(usb_handle *h, const void *_data, int len)
     struct usbdevfs_bulktransfer bulk;
     int n;
 
-    if(h->ep_out == 0 || h->desc == -1) {
+    if(h->ep_out == 0) {
         return -1;
     }
 
-    do {
+    if(len == 0) {
+        bulk.ep = h->ep_out;
+        bulk.len = 0;
+        bulk.data = data;
+        bulk.timeout = 0;
+
+        n = ioctl(h->desc, USBDEVFS_BULK, &bulk);
+        if(n != 0) {
+            fprintf(stderr,"ERROR: n = %d, errno = %d (%s)\n",
+                    n, errno, strerror(errno));
+            return -1;
+        }
+        return 0;
+    }
+
+    while(len > 0) {
         int xfer;
         xfer = (len > MAX_USBFS_BULK_SIZE) ? MAX_USBFS_BULK_SIZE : len;
 
@@ -370,7 +353,7 @@ int usb_write(usb_handle *h, const void *_data, int len)
         count += xfer;
         len -= xfer;
         data += xfer;
-    } while(len > 0);
+    }
 
     return count;
 }
@@ -382,7 +365,7 @@ int usb_read(usb_handle *h, void *_data, int len)
     struct usbdevfs_bulktransfer bulk;
     int n, retry;
 
-    if(h->ep_in == 0 || h->desc == -1) {
+    if(h->ep_in == 0) {
         return -1;
     }
 
@@ -448,20 +431,5 @@ int usb_close(usb_handle *h)
 
 usb_handle *usb_open(ifc_match_func callback)
 {
-    return find_usb_device("/sys/bus/usb/devices", callback);
-}
-
-/* Wait for the system to notice the device is gone, so that a subsequent
- * fastboot command won't try to access the device before it's rebooted.
- * Returns 0 for success, -1 for timeout.
- */
-int usb_wait_for_disconnect(usb_handle *usb)
-{
-  double deadline = now() + WAIT_FOR_DISCONNECT_TIMEOUT;
-  while (now() < deadline) {
-    if (access(usb->fname, F_OK))
-      return 0;
-    usleep(50000);
-  }
-  return -1;
+    return find_usb_device("/dev/bus/usb", callback);
 }

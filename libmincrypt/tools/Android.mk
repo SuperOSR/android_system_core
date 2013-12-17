@@ -13,10 +13,9 @@
 # limitations under the License.
 
 LOCAL_PATH := $(call my-dir)
-
 include $(CLEAR_VARS)
+
 LOCAL_MODULE := dumpkey
 LOCAL_SRC_FILES := DumpPublicKey.java
 LOCAL_JAR_MANIFEST := DumpPublicKey.mf
-LOCAL_STATIC_JAVA_LIBRARIES := bouncycastle-host
 include $(BUILD_HOST_JAVA_LIBRARY)

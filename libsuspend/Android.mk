@@ -11,10 +11,6 @@ libsuspend_src_files := \
 libsuspend_libraries := \
 	liblog libcutils
 
-ifeq ($(TARGET_BOARD_PLATFORM), fiber)
-	LOCAL_CFLAGS += -DTARGET_BOARD_FIBER
-endif
-
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES := $(libsuspend_src_files)
 LOCAL_MODULE := libsuspend

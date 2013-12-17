@@ -33,6 +33,7 @@ struct parse_state
     void *priv;
 };
 
+int lookup_keyword(const char *s);
 void DUMP(void);
 int next_token(struct parse_state *state);
 void parse_error(struct parse_state *state, const char *fmt, ...);

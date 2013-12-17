@@ -10,17 +10,13 @@ LOCAL_SRC_FILES:= \
 	property_service.c \
 	util.c \
 	parser.c \
+	logo.c \
 	keychords.c \
 	signal_handler.c \
 	init_parser.c \
 	ueventd.c \
 	ueventd_parser.c \
 	watchdogd.c
-
-ifeq ($(TARGET_BOARD_PLATFORM), fiber)
-    LOCAL_SRC_FILES += logo.c
-	LOCAL_CFLAGS += -DTARGET_BOARD_FIBER
-endif
 
 ifeq ($(strip $(INIT_BOOTCHART)),true)
 LOCAL_SRC_FILES += bootchart.c

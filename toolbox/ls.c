@@ -75,23 +75,23 @@ static void mode2str(unsigned mode, char *out)
     *out = 0;
 }
 
-static void user2str(uid_t uid, char *out, size_t out_size)
+static void user2str(unsigned uid, char *out)
 {
     struct passwd *pw = getpwuid(uid);
     if(pw) {
-        strlcpy(out, pw->pw_name, out_size);
+        strcpy(out, pw->pw_name);
     } else {
-        snprintf(out, out_size, "%d", uid);
+        sprintf(out, "%d", uid);
     }
 }
 
-static void group2str(gid_t gid, char *out, size_t out_size)
+static void group2str(unsigned gid, char *out)
 {
     struct group *gr = getgrgid(gid);
     if(gr) {
-        strlcpy(out, gr->gr_name, out_size);
+        strcpy(out, gr->gr_name);
     } else {
-        snprintf(out, out_size, "%d", gid);
+        sprintf(out, "%d", gid);
     }
 }
 
@@ -164,8 +164,8 @@ static int listfile_long(const char *path, struct stat *s, int flags)
 {
     char date[32];
     char mode[16];
-    char user[32];
-    char group[32];
+    char user[16];
+    char group[16];
     const char *name;
 
     if(!s || !path) {
@@ -182,11 +182,11 @@ static int listfile_long(const char *path, struct stat *s, int flags)
 
     mode2str(s->st_mode, mode);
     if (flags & LIST_LONG_NUMERIC) {
-        snprintf(user, sizeof(user), "%ld", s->st_uid);
-        snprintf(group, sizeof(group), "%ld", s->st_gid);
+        sprintf(user, "%ld", s->st_uid);
+        sprintf(group, "%ld", s->st_gid);
     } else {
-        user2str(s->st_uid, user, sizeof(user));
-        group2str(s->st_gid, group, sizeof(group));
+        user2str(s->st_uid, user);
+        group2str(s->st_gid, group);
     }
 
     strftime(date, 32, "%Y-%m-%d %H:%M", localtime((const time_t*)&s->st_mtime));
@@ -238,8 +238,8 @@ static int listfile_long(const char *path, struct stat *s, int flags)
 static int listfile_maclabel(const char *path, struct stat *s, int flags)
 {
     char mode[16];
-    char user[32];
-    char group[32];
+    char user[16];
+    char group[16];
     char *maclabel = NULL;
     const char *name;
 
@@ -261,8 +261,8 @@ static int listfile_maclabel(const char *path, struct stat *s, int flags)
     }
 
     mode2str(s->st_mode, mode);
-    user2str(s->st_uid, user, sizeof(user));
-    group2str(s->st_gid, group, sizeof(group));
+    user2str(s->st_uid, user);
+    group2str(s->st_gid, group);
 
     switch(s->st_mode & S_IFMT) {
     case S_IFLNK: {
