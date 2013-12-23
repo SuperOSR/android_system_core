@@ -485,6 +485,10 @@ static void check_fs(char *blk_device, char *fs_type, char *target)
         ret = mount(blk_device, target, fs_type, tmpmnt_flags, tmpmnt_opts);
         if (!ret) {
             umount(target);
+#ifdef TARGET_BOARD_FIBER
+        }else{
+            setup_ext4(blk_device);
+#endif
         }
 
         INFO("Running %s on %s\n", E2FSCK_BIN, blk_device);
@@ -501,6 +505,71 @@ static void check_fs(char *blk_device, char *fs_type, char *target)
 
     return;
 }
+
+#ifdef TARGET_BOARD_FIBER
+/* setupfs, format a device to ext4 */
+const char *mkext4fs = "/system/bin/mke2fs.ext4";
+
+int setup_ext4(const char *blockdev)
+{
+    char buf[256], path[128];
+    pid_t child;
+    int status, n;
+
+	/* we might be looking at an indirect reference */
+    n = readlink(blockdev, path, sizeof(path) - 1);	
+	//weng: fix the readlink error!
+	if (n < 0) {
+		fprintf(stderr, "readlink err: %d\n", errno);
+		n = strlen(blockdev);	
+		strcpy(path, blockdev);
+	}
+	
+    if (n > 0) {
+        path[n] = 0;
+        if (!memcmp(path, "/dev/block/", 11))
+            blockdev = path + 11;
+    }
+	
+
+    if (strchr(blockdev,'/')) {
+        fprintf(stderr,"not a block device name: %s\n", blockdev);
+        return 0;
+    }
+    
+    sprintf(buf,"/sys/fs/ext4/%s", blockdev);
+    if (access(buf, F_OK) == 0) {
+        fprintf(stderr,"device %s already has a filesystem\n", blockdev);
+        return 0;
+    }
+    sprintf(buf,"/dev/block/%s", blockdev);
+
+    fprintf(stderr,"+++\n");
+    
+tryagain:
+	ERROR("begin to format ext4 buffer : %s  ", buf);
+    child = fork();
+    if (child < 0) {
+        fprintf(stderr,"error: fork failed\n");
+        return 0;
+    }
+    if (child == 0) {
+        execl(mkext4fs, mkext4fs, buf, NULL);        
+    }else{    	
+		waitpid(child, &status, 0);
+		ERROR("finish format to ext4 :%s",buf);
+		if (WEXITSTATUS(status) != 0) {
+			ERROR("exec: pid %1d exited with return code %d: %s", (int)child, WEXITSTATUS(status), strerror(status));
+			sleep(3);
+			goto tryagain;
+		}
+    }
+	
+    //while (waitpid(-1, &status, 0) != child) ;
+
+    return 1;
+}
+#endif
 
 static void remove_trailing_slashes(char *n)
 {

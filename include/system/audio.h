@@ -49,6 +49,9 @@ typedef enum {
     AUDIO_STREAM_ENFORCED_AUDIBLE = 7, /* Sounds that cannot be muted by user and must be routed to speaker */
     AUDIO_STREAM_DTMF             = 8,
     AUDIO_STREAM_TTS              = 9,
+#ifdef TARGET_BOARD_FIBER
+    AUDIO_STREAM_FM               = 10,
+#endif
 
     AUDIO_STREAM_CNT,
     AUDIO_STREAM_MAX              = AUDIO_STREAM_CNT - 1,
@@ -70,6 +73,10 @@ typedef enum {
                                           /* An example of remote presentation is Wifi Display */
                                           /*  where a dongle attached to a TV can be used to   */
                                           /*  play the mix captured by this audio source.      */
+#ifdef TARGET_BOARD_FIBER
+    AUDIO_SOURCE_AF		             = 9,
+    AUDIO_SOURCE_FM		             = 10,
+#endif
     AUDIO_SOURCE_CNT,
     AUDIO_SOURCE_MAX                 = AUDIO_SOURCE_CNT - 1,
     AUDIO_SOURCE_HOTWORD             = 1999, /* A low-priority, preemptible audio source for
@@ -248,6 +255,9 @@ enum {
     AUDIO_CHANNEL_IN_MONO   = AUDIO_CHANNEL_IN_FRONT,
     AUDIO_CHANNEL_IN_STEREO = (AUDIO_CHANNEL_IN_LEFT | AUDIO_CHANNEL_IN_RIGHT),
     AUDIO_CHANNEL_IN_FRONT_BACK = (AUDIO_CHANNEL_IN_FRONT | AUDIO_CHANNEL_IN_BACK),
+#ifdef TARGET_BOARD_FIBER
+    AUDIO_CHANNEL_IN_VOICE = (AUDIO_CHANNEL_IN_VOICE_UPLINK | AUDIO_CHANNEL_IN_VOICE_DNLINK),
+#endif
     AUDIO_CHANNEL_IN_ALL    = (AUDIO_CHANNEL_IN_LEFT |
                                AUDIO_CHANNEL_IN_RIGHT |
                                AUDIO_CHANNEL_IN_FRONT |
@@ -260,6 +270,9 @@ enum {
                                AUDIO_CHANNEL_IN_X_AXIS |
                                AUDIO_CHANNEL_IN_Y_AXIS |
                                AUDIO_CHANNEL_IN_Z_AXIS |
+#ifdef TARGET_BOARD_FIBER
+                               AUDIO_CHANNEL_IN_VOICE |
+#endif
                                AUDIO_CHANNEL_IN_VOICE_UPLINK |
                                AUDIO_CHANNEL_IN_VOICE_DNLINK),
 };
@@ -274,6 +287,10 @@ typedef enum {
     AUDIO_MODE_IN_CALL          = 2,
     AUDIO_MODE_IN_COMMUNICATION = 3,
 
+#ifdef TARGET_BOARD_FIBER
+    AUDIO_MODE_MODE_FACTORY_TEST = 4,
+    AUDIO_MODE_FM		         = 5,
+#endif
     AUDIO_MODE_CNT,
     AUDIO_MODE_MAX              = AUDIO_MODE_CNT - 1,
 } audio_mode_t;
@@ -350,6 +367,10 @@ enum {
     AUDIO_DEVICE_IN_DGTL_DOCK_HEADSET     = AUDIO_DEVICE_BIT_IN | 0x400,
     AUDIO_DEVICE_IN_USB_ACCESSORY         = AUDIO_DEVICE_BIT_IN | 0x800,
     AUDIO_DEVICE_IN_USB_DEVICE            = AUDIO_DEVICE_BIT_IN | 0x1000,
+#ifdef TARGET_BOARD_FIBER
+    AUDIO_DEVICE_IN_FM 		              = AUDIO_DEVICE_BIT_IN | 0x2000,
+    AUDIO_DEVICE_IN_AF 		              = AUDIO_DEVICE_BIT_IN | 0x1000000,
+#endif
     AUDIO_DEVICE_IN_DEFAULT               = AUDIO_DEVICE_BIT_IN | AUDIO_DEVICE_BIT_DEFAULT,
 
     AUDIO_DEVICE_IN_ALL     = (AUDIO_DEVICE_IN_COMMUNICATION |
@@ -365,6 +386,10 @@ enum {
                                AUDIO_DEVICE_IN_DGTL_DOCK_HEADSET |
                                AUDIO_DEVICE_IN_USB_ACCESSORY |
                                AUDIO_DEVICE_IN_USB_DEVICE |
+#ifdef TARGET_BOARD_FIBER
+                               AUDIO_DEVICE_IN_AF |
+                               AUDIO_DEVICE_IN_FM |
+#endif
                                AUDIO_DEVICE_IN_DEFAULT),
     AUDIO_DEVICE_IN_ALL_SCO = AUDIO_DEVICE_IN_BLUETOOTH_SCO_HEADSET,
 };

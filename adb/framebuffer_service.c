@@ -56,7 +56,11 @@ void framebuffer_service(int fd, void *cookie)
 {
     struct fbinfo fbinfo;
     unsigned int i;
+#ifdef TARGET_BOARD_FIBER
+    char buf[1024];
+#else
     char buf[640];
+#endif
     int fd_screencap;
     int w, h, f;
     int fds[2];
