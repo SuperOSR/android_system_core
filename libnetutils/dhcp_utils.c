@@ -57,6 +57,22 @@ void get_p2p_interface_replacement(const char *interface, char *p2p_interface) {
     }
 }
 
+#ifdef TARGET_BOARD_FIBER
+/*
+ * ethernet interface names behave as p2p.
+ * eth_ethx,prefix must be eth_ set by EthernetStateTracker
+ */
+int get_eth_interface_replacement(const char *interface, char *eth_interface) {
+    if (strncmp(interface, "eth_", 4) == 0) {
+        memset(eth_interface, 0, MAX_INTERFACE_LENGTH);
+        sprintf(eth_interface, "eth");
+        strncpy(interface, interface + 4, strlen(interface + 4) + 1);
+        return 1;
+    }
+    return 0;
+}
+#endif
+
 /*
  * Wait for a system property to be assigned a specified value.
  * If desired_value is NULL, then just wait for the property to
@@ -205,6 +221,13 @@ int dhcp_do_request(const char *interface,
 
     get_p2p_interface_replacement(interface, p2p_interface);
 
+#ifdef TARGET_BOARD_FIBER
+    if(get_eth_interface_replacement(interface, p2p_interface)) {
+        snprintf(result_prop_name, sizeof(result_prop_name), "%s.%s.result",
+                DHCP_PROP_NAME_PREFIX,
+                interface);
+    } else
+#endif
     snprintf(result_prop_name, sizeof(result_prop_name), "%s.%s.result",
             DHCP_PROP_NAME_PREFIX,
             p2p_interface);
@@ -269,6 +292,13 @@ int dhcp_stop(const char *interface)
 
     get_p2p_interface_replacement(interface, p2p_interface);
 
+#ifdef TARGET_BOARD_FIBER
+    if(get_eth_interface_replacement(interface, p2p_interface)) {
+        snprintf(result_prop_name, sizeof(result_prop_name), "%s.%s.result",
+                DHCP_PROP_NAME_PREFIX,
+                interface);
+    } else
+#endif
     snprintf(result_prop_name, sizeof(result_prop_name), "%s.%s.result",
             DHCP_PROP_NAME_PREFIX,
             p2p_interface);
