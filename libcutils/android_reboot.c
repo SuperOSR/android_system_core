@@ -100,12 +100,18 @@ static void remount_ro(void)
     return;
 }
 
+#ifdef TARGET_BOARD_FIBER
+extern int write_misc(char *reason);
+#endif
 
 int android_reboot(int cmd, int flags, char *arg)
 {
     int ret;
 
     sync();
+#ifdef TARGET_BOARD_FIBER
+    sleep(2);
+#endif
     remount_ro();
 
     switch (cmd) {
@@ -118,8 +124,13 @@ int android_reboot(int cmd, int flags, char *arg)
             break;
 
         case ANDROID_RB_RESTART2:
+#ifdef TARGET_BOARD_FIBER
+            write_misc(arg);
+			ret = reboot(RB_AUTOBOOT);
+#else
             ret = __reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
                            LINUX_REBOOT_CMD_RESTART2, arg);
+#endif
             break;
 
         default:

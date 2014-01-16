@@ -113,6 +113,10 @@ LOCAL_SRC_FILES := $(commonSources) \
         qtaguid.c \
         trace.c \
         uevent.c
+        
+ifeq ($(TARGET_BOARD_FIBER), fiber)
+    LOCAL_SRC_FILES += misc_rw.c
+endif
 
 ifeq ($(TARGET_ARCH),arm)
 LOCAL_SRC_FILES += arch-arm/memset32.S
@@ -128,6 +132,13 @@ LOCAL_SRC_FILES += memory.c
 endif # !mips
 endif # !x86-atom
 endif # !arm
+
+ifneq ($(SW_BOARD_RECOVERY_MISC_PARTITION),)
+    BOARD_MISC_PARTITION  :=$(SW_BOARD_RECOVERY_MISC_PARTITION)
+else
+    BOARD_MISC_PARTITION  :=\"nandf\"
+endif
+LOCAL_CFLAGS += -DBOARD_MISC_PARTITION=$(BOARD_MISC_PARTITION)
 
 LOCAL_C_INCLUDES := $(libcutils_c_includes) $(KERNEL_HEADERS)
 LOCAL_STATIC_LIBRARIES := liblog
