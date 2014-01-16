@@ -35,6 +35,9 @@
 
 static int sPowerStatefd;
 static const char *pwr_state_mem = "mem";
+#ifdef TARGET_BOARD_FIBER
+static const char *pwr_state_bootfast="bootfast";
+#endif
 static const char *pwr_state_on = "on";
 static pthread_t earlysuspend_thread;
 static pthread_mutex_t earlysuspend_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -102,6 +105,39 @@ static void *earlysuspend_thread_func(void *arg)
         pthread_mutex_unlock(&earlysuspend_mutex);
     }
 }
+
+#ifdef TARGET_BOARD_FIBER
+static int autosuspend_earlysuspend_gotobootfast(void)
+{
+    char buf[80];
+    int ret;
+
+    ALOGV("autosuspend_earlysuspend_gotobootfast\n");
+	
+    ret = write(sPowerStatefd, pwr_state_bootfast, strlen(pwr_state_bootfast));
+    if (ret < 0) {
+        strerror_r(errno, buf, sizeof(buf));
+        ALOGE("Error writing to %s: %s\n", EARLYSUSPEND_SYS_POWER_STATE, buf);
+        goto err;
+    }
+	
+    if (wait_for_earlysuspend) {
+        pthread_mutex_lock(&earlysuspend_mutex);
+        while (earlysuspend_state != EARLYSUSPEND_MEM) {
+            pthread_cond_wait(&earlysuspend_cond, &earlysuspend_mutex);
+        }
+        pthread_mutex_unlock(&earlysuspend_mutex);
+    }
+	
+    ALOGV("autosuspend_earlysuspend_gotobootfast done\n");
+
+    return 0;
+
+err:
+    return ret;
+}
+#endif
+
 static int autosuspend_earlysuspend_enable(void)
 {
     char buf[80];
@@ -165,6 +201,9 @@ err:
 struct autosuspend_ops autosuspend_earlysuspend_ops = {
         .enable = autosuspend_earlysuspend_enable,
         .disable = autosuspend_earlysuspend_disable,
+#ifdef TARGET_BOARD_FIBER
+		.bootfast = autosuspend_earlysuspend_gotobootfast
+#endif
 };
 
 void start_earlysuspend_thread(void)
