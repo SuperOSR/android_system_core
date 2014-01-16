@@ -133,6 +133,9 @@ void service_start(struct service *svc, const char *dynamic_args);
 void property_changed(const char *name, const char *value);
 
 #define INIT_IMAGE_FILE	"/initlogo.rle"
+#ifdef TARGET_BOARD_FIBER
+int load_argb8888_image(char *fn);
+#endif
 
 int load_565rle_image( char *file_name );
 

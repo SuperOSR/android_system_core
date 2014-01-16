@@ -249,6 +249,47 @@ int do_export(int nargs, char **args)
     return 0;
 }
 
+#ifdef TARGET_BOARD_FIBER
+int do_format_userdata(int argc, char **argv)
+{
+	const char *devicePath = argv[1];
+	char bootsector[512];
+	char lable[32];
+	int fd;
+	int num;
+	pid_t child;
+	int status;
+
+	fd = open(devicePath, O_RDONLY);
+	if( fd <= 0 ) {
+		ERROR("open device error :%s", strerror(errno));
+		return 1;
+	}
+	memset(bootsector, 0, 512);
+	read(fd, bootsector, 512);
+	close(fd);
+	if( (bootsector[510]==0x55) && (bootsector[511]==0xaa) )
+	{
+		ERROR("dont need format %s", devicePath);
+		return 1;
+	}
+	else
+	{
+		ERROR("start format %s", devicePath);
+		child = fork();
+    	if (child == 0) {
+    		ERROR("fork to format %s", devicePath);
+        	execl("/system/bin/logwrapper","/system/bin/logwrapper","/system/bin/newfs_msdos","-F","32","-O","android","-c","8", "-L",argv[2],argv[1], NULL);
+        	exit(-1);
+   		}
+   		ERROR("wait for format %s", devicePath);
+   		while (waitpid(-1, &status, 0) != child) ;
+   		ERROR("format %s ok", devicePath);
+   		return 1;
+	}
+}
+#endif
+
 int do_hostname(int nargs, char **args)
 {
     return write_file("/proc/sys/kernel/hostname", args[1]);
