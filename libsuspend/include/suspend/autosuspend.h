@@ -43,9 +43,7 @@ int autosuspend_enable(void);
  */
 int autosuspend_disable(void);
 
-#ifdef TARGET_BOARD_FIBER
 int autosuspend_bootfast(void);
-#endif
 
 __END_DECLS
 

@@ -108,10 +108,10 @@ int autosuspend_disable(void)
     return 0;
 }
 
-#ifdef TARGET_BOARD_FIBER
 int autosuspend_bootfast(void)
 {
-	int ret;
+#ifdef TARGET_BOARD_FIBER
+    int ret;
 
     ret = autosuspend_init();
     if (ret) {
@@ -130,6 +130,6 @@ int autosuspend_bootfast(void)
     }
 
     autosuspend_enabled = true;
+#endif
     return 0;
 }
-#endif
